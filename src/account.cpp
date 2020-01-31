@@ -17,6 +17,7 @@
 #include "olm/pickle.h"
 #include "olm/pickle.hh"
 #include "olm/memory.hh"
+#include "sodium.h"
 
 olm::Account::Account(
 ) : next_one_time_key_id(0),
@@ -64,6 +65,34 @@ std::size_t olm::Account::new_account(
     _olm_crypto_ed25519_generate_key(random, &identity_keys.ed25519_key);
     random += ED25519_RANDOM_LENGTH;
     _olm_crypto_curve25519_generate_key(random, &identity_keys.curve25519_key);
+
+    return 0;
+}
+
+std::size_t olm::Account::new_account_derrived_keys(
+    uint8_t const * random, std::size_t random_length
+) {
+    if (random_length < ED25519_RANDOM_LENGTH) {
+        last_error = OlmErrorCode::OLM_NOT_ENOUGH_RANDOM;
+        return std::size_t(-1);
+    }
+
+    _olm_crypto_ed25519_generate_key(random, &identity_keys.ed25519_key);
+
+    u_char *ed25519_sk = (u_char *)&identity_keys.ed25519_key.private_key.private_key;
+    u_char *curve25519_sk = (u_char *)&identity_keys.curve25519_key.private_key.private_key;
+    u_char *ed25519_pk = (u_char *)&identity_keys.ed25519_key.public_key.public_key;
+    u_char *curve25519_pk = (u_char *)&identity_keys.curve25519_key.public_key.public_key;
+
+    if (crypto_sign_ed25519_sk_to_curve25519(curve25519_sk, ed25519_sk) != 0) {
+        last_error = OlmErrorCode::OLM_NOT_ENOUGH_RANDOM;
+        return std::size_t(-1);
+    };
+
+    if (crypto_sign_ed25519_pk_to_curve25519(curve25519_pk, ed25519_pk) != 0) {
+        last_error = OlmErrorCode::OLM_NOT_ENOUGH_RANDOM;
+        return std::size_t(-1);
+    };
 
     return 0;
 }
@@ -363,6 +392,7 @@ std::uint8_t const * olm::unpickle(
 ) {
     uint32_t pickle_version;
     pos = olm::unpickle(pos, end, pickle_version);
+
     switch (pickle_version) {
         case ACCOUNT_PICKLE_VERSION:
             break;

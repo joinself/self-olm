@@ -55,6 +55,13 @@ struct Account {
         uint8_t const * random, std::size_t random_length
     );
 
+    /** Creates a new account where the curve25519 key is converted from the
+     * ed25519 key. Returns std::size_t(-1) on error. If the number of
+     * random bytes is too small then last_error will be NOT_ENOUGH_RANDOM */
+    std::size_t new_account_derrived_keys(
+        uint8_t const * random, std::size_t random_length
+    );
+
     /** Number of bytes needed to output the identity keys for this account */
     std::size_t get_identity_json_length();
 

@@ -320,6 +320,14 @@ size_t olm_create_account(
     return result;
 }
 
+size_t olm_create_account_derrived_keys(
+    OlmAccount * account,
+    void * random, size_t random_length
+) {
+    size_t result = from_c(account)->new_account_derrived_keys(from_c(random), random_length);
+    olm::unset(random, random_length);
+    return result;
+}
 
 size_t olm_account_identity_keys_length(
     OlmAccount * account

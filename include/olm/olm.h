@@ -170,6 +170,12 @@ size_t olm_create_account(
     void * random, size_t random_length
 );
 
+// Creates a new account with the curve 25519 key derrived from the ed25519 keypair
+size_t olm_create_account_derrived_keys(
+    OlmAccount * account,
+    void * random, size_t random_legth
+);
+
 /** The size of the output buffer needed to hold the identity keys */
 size_t olm_account_identity_keys_length(
     OlmAccount * account
