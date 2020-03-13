@@ -182,9 +182,15 @@ std::size_t olm::Account::sign(
         last_error = OlmErrorCode::OLM_OUTPUT_BUFFER_TOO_SMALL;
         return std::size_t(-1);
     }
-    _olm_crypto_ed25519_sign(
-        &identity_keys.ed25519_key, message, message_length, signature
-    );
+    
+    unsigned long long *smlen_p = (unsigned long long *)&signature_length;
+    u_char *sk = (u_char *)&identity_keys.ed25519_key.private_key.private_key;
+
+    if (crypto_sign(signature, smlen_p, message, message_length, sk) != 0) {
+        last_error = OlmErrorCode::OLM_OUTPUT_BUFFER_TOO_SMALL;
+        return std::size_t(-1);
+    }
+
     return this->signature_length();
 }
 
