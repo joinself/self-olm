@@ -77,12 +77,15 @@ std::size_t olm::Account::new_account_derrived_keys(
         return std::size_t(-1);
     }
 
-    _olm_crypto_ed25519_generate_key(random, &identity_keys.ed25519_key);
-
     u_char *ed25519_sk = (u_char *)&identity_keys.ed25519_key.private_key.private_key;
     u_char *curve25519_sk = (u_char *)&identity_keys.curve25519_key.private_key.private_key;
     u_char *ed25519_pk = (u_char *)&identity_keys.ed25519_key.public_key.public_key;
     u_char *curve25519_pk = (u_char *)&identity_keys.curve25519_key.public_key.public_key;
+
+    if (crypto_sign_seed_keypair(ed25519_pk, ed25519_sk, random) != 0) {
+        last_error = OlmErrorCode::OLM_NOT_ENOUGH_RANDOM;
+        return std::size_t(-1);
+    };
 
     if (crypto_sign_ed25519_sk_to_curve25519(curve25519_sk, ed25519_sk) != 0) {
         last_error = OlmErrorCode::OLM_NOT_ENOUGH_RANDOM;
