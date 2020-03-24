@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.4)
 
+include(ExternalProject)
+
 project(olm VERSION 3.1.4 LANGUAGES CXX C)
 
 option(OLM_TESTS "Build tests" ON)
@@ -48,6 +50,7 @@ add_library(olm
     lib/curve25519-donna/curve25519-donna.c)
 add_library(Olm::Olm ALIAS olm)
 
+
 target_include_directories(olm
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -63,6 +66,23 @@ set_target_properties(olm PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+
+ExternalProject_Add(project_sodium
+	URL https://download.libsodium.org/libsodium/releases/libsodium-1.0.18-stable.tar.gz
+	PREFIX ${CMAKE_CURRENT_BINARY_DIR}/libsodium-1.0.18-stable
+    BUILD_IN_SOURCE 1
+	CONFIGURE_COMMAND ./configure
+	BUILD_COMMAND make
+	INSTALL_COMMAND make install
+	PREFIX=${CMAKE_CURRENT_BINARY_DIR}/libsodium-1.0.18-stable
+)
+
+ExternalProject_Get_Property(project_sodium install_dir)
+add_library(sodium STATIC IMPORTED)
+set_property(TARGET sodium PROPERTY IMPORTED_LOCATION /usr/local/lib/libsodium.a)
+add_dependencies(sodium project_sodium)
+include_directories(/usr/local/include/)
+target_link_libraries(olm sodium)
 
 #
 # Installation
