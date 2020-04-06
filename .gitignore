@@ -7,6 +7,12 @@
 /README.html
 /tracing/README.html
 
+# packages
+*.deb
+*.rpm
+*.pkg
+
+
 # Xcode
 build/
 DerivedData/
