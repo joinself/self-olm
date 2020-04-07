@@ -21,6 +21,7 @@ build:
   function build() {
     docker run -v $PWD:/build aldgateventuresbot/fpm sh -c "apt-get update && apt-get install -y libsodium-dev rpm && cd /build && fpm -s dir -t deb -n libselfid-olm -v 0.0.1 --deb-no-default-config-files -d libsodium-dev ./build/libolm.so=/usr/lib/ ./build/libolm.so.3=/usr/lib/ ./build/libolm.so.3.1.4=/usr/lib/ ./include/olm/=/usr/include/olm && -s dir -t rpm -n libselfid-olm -v 0.0.1 -d libsodium-devel ./build/libolm.so=/usr/lib/ ./build/libolm.so.3=/usr/lib/ ./build/libolm.so.3.1.4=/usr/lib/ ./include/olm/=/usr/include/olm"
     ls -lah
+    echo "foo"
   }
 
   function setup_git() {
