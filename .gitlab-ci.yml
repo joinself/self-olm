@@ -41,13 +41,13 @@ publish:
 
       case $commitDesc in
         *+bump-major*)
-          newVersion=$(semver bump major $currentVersion)
+          newVersion=$(/usr/local/bin/semver bump major $currentVersion)
           ;;
         *+bump-minor*)
-          newVersion=$(semver bump minor $currentVersion)
+          newVersion=$(/usr/local/bin/semver bump minor $currentVersion)
           ;;
         *)
-          newVersion=$(semver bump patch $currentVersion)
+          newVersion=$(/usr/local/bin/semver bump patch $currentVersion)
           ;;
       esac
     fi
