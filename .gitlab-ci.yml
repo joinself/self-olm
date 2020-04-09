@@ -29,7 +29,7 @@ publish:
     - branches
 
 .functions: &functions |
-  set -e -x
+  set -x
 
   function new_version {
     commitDesc=$CI_COMMIT_DESCRIPTION
