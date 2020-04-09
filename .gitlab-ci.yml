@@ -54,7 +54,7 @@ publish:
       esac
     fi
 
-    echo newVersion
+    echo $newVersion
   }
 
 
