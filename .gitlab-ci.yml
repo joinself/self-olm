@@ -52,13 +52,14 @@ publish:
       esac
     fi
 
-    echo $newVersion
+    #echo $newVersion
   }
 
 
 
   function build() {
-    newVersion=$(new_version)
+    newVersion
+    #newVersion=$(new_version)
     #test123
     echo "------------------------- ${newVersion} - build --------------------------------------"
 
