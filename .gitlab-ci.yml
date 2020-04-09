@@ -58,7 +58,7 @@ publish:
 
 
   function build() {
-    echo "------------------------- ${newVersion} - build --------------------------------------"
+    #echo "------------------------- ${newVersion} - build --------------------------------------"
     new_version
     #newVersion=$(new_version)
     #test123
