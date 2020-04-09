@@ -19,16 +19,14 @@ build:
   only:
     - branches
 
-# lock branch to only master
 publish:
   stage: Publish
   image: aldgateventuresbot/deploy
   script:
-    - ls -lah
     - release
     - publish
   only:
-    - branches
+    - master
 
 .functions: &functions |
   set -x
