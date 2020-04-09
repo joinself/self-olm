@@ -11,6 +11,7 @@ build:
   services:
     - docker:19.03.2-dind
   script:
+    - sleep 4
     - build
   artifacts:
     paths:
@@ -32,7 +33,7 @@ build:
   function build() {
     echo "------------------------- ${x} - build --------------------------------------"
     local newx=$(new_version)
-    echo "------------------------- ${newx} - build --------------------------------------"
+    echo "========================= ${newx} - build ==============================="
 
   }
 
