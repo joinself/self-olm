@@ -22,7 +22,7 @@ build:
   set -x
 
   function new_version {
-    x="foo"
+    local x="foo"
     #echo "-------------------------- $x - func ----------------------------"
     echo $x
   }
@@ -31,7 +31,7 @@ build:
 
   function build() {
     echo "------------------------- ${x} - build --------------------------------------"
-    newx=$(new_version)
+    local newx=$(new_version)
     echo "------------------------- ${newx} - build --------------------------------------"
 
   }
