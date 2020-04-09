@@ -25,6 +25,8 @@ publish:
   image: aldgateventuresbot/deploy
   script:
     - ls -lah
+    - release
+    - publish
   only:
     - branches
 
