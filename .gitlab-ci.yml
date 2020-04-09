@@ -51,10 +51,13 @@ publish:
       esac
     fi
 
+    echo "-------------------- ${newVersion} ----------------"
+    
+
   }
 
   function build() {
-    new_version
+    #new_version
     echo "============== ${newVersion} ================="
   }
 
