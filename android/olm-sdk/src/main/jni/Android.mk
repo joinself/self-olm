@@ -25,7 +25,7 @@ LOCAL_CFLAGS+=-fstack-protector-all -D_FORTIFY_SOURCE=2 -Wformat -Wformat-securi
 LOCAL_LDFLAGS=-z relro -z now
 
 LOCAL_C_INCLUDES+= $(LOCAL_PATH)/$(SRC_ROOT_DIR)/include/ \
-$(LOCAL_PATH)/$(SRC_ROOT_DIR)/lib
+$(LOCAL_PATH)/$(SRC_ROOT_DIR)/lib /usr/include
 
 $(info LOCAL_C_INCLUDES=$(LOCAL_C_INCLUDES))
 

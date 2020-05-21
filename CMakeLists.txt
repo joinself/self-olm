@@ -23,7 +23,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-add_library(olm
+add_library(self_olm
     src/account.cpp
     src/base64.cpp
     src/cipher.cpp
@@ -48,21 +48,21 @@ add_library(olm
     lib/crypto-algorithms/aes.c
     lib/crypto-algorithms/sha256.c
     lib/curve25519-donna/curve25519-donna.c)
-add_library(Olm::Olm ALIAS olm)
+add_library(Olm::Olm ALIAS self_olm)
 
 
-target_include_directories(olm
+target_include_directories(self_olm
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
-set_target_properties(olm PROPERTIES
+set_target_properties(self_olm PROPERTIES
    SOVERSION ${PROJECT_VERSION_MAJOR}
    VERSION ${PROJECT_VERSION})
 
-set_target_properties(olm PROPERTIES
+set_target_properties(self_olm PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
@@ -82,14 +82,14 @@ add_library(sodium STATIC IMPORTED)
 set_property(TARGET sodium PROPERTY IMPORTED_LOCATION /usr/local/lib/libsodium.a)
 add_dependencies(sodium project_sodium)
 include_directories(/usr/local/include/)
-target_link_libraries(olm sodium)
+target_link_libraries(self_olm sodium)
 
 #
 # Installation
 #
 include(GNUInstallDirs)
 set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/Olm)
-install(TARGETS olm
+install(TARGETS self_olm
     EXPORT olm-targets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -97,14 +97,14 @@ install(TARGETS olm
 )
 
 # The exported target will be named Olm.
-set_target_properties(olm PROPERTIES EXPORT_NAME Olm)
+set_target_properties(self_olm PROPERTIES EXPORT_NAME Olm)
 install(FILES
     ${CMAKE_SOURCE_DIR}/include/olm/olm.h
     ${CMAKE_SOURCE_DIR}/include/olm/outbound_group_session.h
     ${CMAKE_SOURCE_DIR}/include/olm/inbound_group_session.h
     ${CMAKE_SOURCE_DIR}/include/olm/pk.h
     ${CMAKE_SOURCE_DIR}/include/olm/sas.h
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/olm)
+DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/self_olm)
 
 # Export the targets to a script.
 install(EXPORT olm-targets

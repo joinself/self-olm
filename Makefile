@@ -20,13 +20,13 @@ ifeq ($(UNAME),Darwin)
 	OLM_LDFLAGS :=
 else
 	SO := so
-	OLM_LDFLAGS := -Wl,-soname,libolm.so.$(MAJOR) \
+	OLM_LDFLAGS := -Wl,-soname,libself_olm.so.$(MAJOR) \
                        -Wl,--version-script,version_script.ver
 endif
 
-RELEASE_TARGET := $(BUILD_DIR)/libolm.$(SO).$(VERSION)
-STATIC_RELEASE_TARGET := $(BUILD_DIR)/libolm.a
-DEBUG_TARGET := $(BUILD_DIR)/libolm_debug.$(SO).$(VERSION)
+RELEASE_TARGET := $(BUILD_DIR)/libself_olm.$(SO).$(VERSION)
+STATIC_RELEASE_TARGET := $(BUILD_DIR)/libself_olm.a
+DEBUG_TARGET := $(BUILD_DIR)/libself_olm_debug.$(SO).$(VERSION)
 JS_WASM_TARGET := javascript/olm.js
 JS_ASMJS_TARGET := javascript/olm_legacy.js
 
@@ -161,8 +161,8 @@ $(RELEASE_TARGET): $(RELEASE_OBJECTS)
 	$(CXX) $(LDFLAGS) --shared -fPIC \
             $(OLM_LDFLAGS) \
             $(OUTPUT_OPTION) $(RELEASE_OBJECTS)
-	ln -sf libolm.$(SO).$(VERSION) $(BUILD_DIR)/libolm.$(SO).$(MAJOR)
-	ln -sf libolm.$(SO).$(VERSION) $(BUILD_DIR)/libolm.$(SO)
+	ln -sf libself_olm.$(SO).$(VERSION) $(BUILD_DIR)/libself_olm.$(SO).$(MAJOR)
+	ln -sf libself_olm.$(SO).$(VERSION) $(BUILD_DIR)/libself_olm.$(SO)
 
 debug: $(DEBUG_TARGET)
 .PHONY: debug
@@ -171,7 +171,7 @@ $(DEBUG_TARGET): $(DEBUG_OBJECTS)
 	$(CXX) $(LDFLAGS) --shared -fPIC \
             $(OLM_LDFLAGS) \
             $(OUTPUT_OPTION) $(DEBUG_OBJECTS)
-	ln -sf libolm_debug.$(SO).$(VERSION) $(BUILD_DIR)/libolm_debug.$(SO).$(MAJOR)
+	ln -sf libself_olm_debug.$(SO).$(VERSION) $(BUILD_DIR)/libself_olm_debug.$(SO).$(MAJOR)
 
 static: $(STATIC_RELEASE_TARGET)
 .PHONY: static
@@ -228,22 +228,22 @@ all: test js lib debug doc
 .PHONY: all
 
 install-headers: $(PUBLIC_HEADERS)
-	test -d $(DESTDIR)$(PREFIX)/include/olm || $(call mkdir,$(DESTDIR)$(PREFIX)/include/olm)
-	install -Dm644 $(PUBLIC_HEADERS) $(DESTDIR)$(PREFIX)/include/olm/
+	test -d $(DESTDIR)$(PREFIX)/include/olm || $(call mkdir,$(DESTDIR)$(PREFIX)/include/self_olm)
+	install -Dm644 $(PUBLIC_HEADERS) $(DESTDIR)$(PREFIX)/include/self_olm/
 .PHONY: install-headers
 
 install-debug: debug install-headers
 	test -d $(DESTDIR)$(PREFIX)/lib || $(call mkdir,$(DESTDIR)$(PREFIX)/lib)
-	install -Dm755 $(DEBUG_TARGET) $(DESTDIR)$(PREFIX)/lib/libolm_debug.$(SO).$(VERSION)
-	ln -sf libolm_debug.$(SO).$(VERSION) $(DESTDIR)$(PREFIX)/lib/libolm_debug.$(SO).$(MAJOR)
-	ln -sf libolm_debug.$(SO).$(VERSION) $(DESTDIR)$(PREFIX)/lib/libolm_debug.$(SO)
+	install -Dm755 $(DEBUG_TARGET) $(DESTDIR)$(PREFIX)/lib/libself_olm_debug.$(SO).$(VERSION)
+	ln -sf libself_olm_debug.$(SO).$(VERSION) $(DESTDIR)$(PREFIX)/lib/libself_olm_debug.$(SO).$(MAJOR)
+	ln -sf libself_olm_debug.$(SO).$(VERSION) $(DESTDIR)$(PREFIX)/lib/libself_olm_debug.$(SO)
 .PHONY: install-debug
 
 install: lib install-headers
 	test -d $(DESTDIR)$(PREFIX)/lib || $(call mkdir,$(DESTDIR)$(PREFIX)/lib)
-	install -Dm755 $(RELEASE_TARGET) $(DESTDIR)$(PREFIX)/lib/libolm.$(SO).$(VERSION)
-	ln -sf libolm.$(SO).$(VERSION) $(DESTDIR)$(PREFIX)/lib/libolm.$(SO).$(MAJOR)
-	ln -sf libolm.$(SO).$(VERSION) $(DESTDIR)$(PREFIX)/lib/libolm.$(SO)
+	install -Dm755 $(RELEASE_TARGET) $(DESTDIR)$(PREFIX)/lib/libself_olm.$(SO).$(VERSION)
+	ln -sf libself_olm.$(SO).$(VERSION) $(DESTDIR)$(PREFIX)/lib/libself_olm.$(SO).$(MAJOR)
+	ln -sf libself_olm.$(SO).$(VERSION) $(DESTDIR)$(PREFIX)/lib/libself_olm.$(SO)
 .PHONY: install
 
 clean:;
