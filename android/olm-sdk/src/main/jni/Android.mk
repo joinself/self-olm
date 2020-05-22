@@ -1,4 +1,11 @@
 LOCAL_PATH := $(call my-dir)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := sodium
+LOCAL_SRC_FILES := $(TARGET_ARCH_ABI)/libsodium.so
+#LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
+include $(PREBUILT_SHARED_LIBRARY)
+
 include $(CLEAR_VARS)
 
 
@@ -25,7 +32,8 @@ LOCAL_CFLAGS+=-fstack-protector-all -D_FORTIFY_SOURCE=2 -Wformat -Wformat-securi
 LOCAL_LDFLAGS=-z relro -z now
 
 LOCAL_C_INCLUDES+= $(LOCAL_PATH)/$(SRC_ROOT_DIR)/include/ \
-$(LOCAL_PATH)/$(SRC_ROOT_DIR)/lib /usr/include
+$(LOCAL_PATH)/$(SRC_ROOT_DIR)/lib
+LOCAL_SHARED_LIBRARIES := sodium
 
 $(info LOCAL_C_INCLUDES=$(LOCAL_C_INCLUDES))
 
@@ -64,4 +72,3 @@ olm_sas.cpp
 LOCAL_LDLIBS := -llog
 
 include $(BUILD_SHARED_LIBRARY)
-
