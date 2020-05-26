@@ -18,7 +18,7 @@
 #define _OLMPK_H
 
 #include "olm_jni.h"
-#include "olm/pk.h"
+#include "self_olm/pk.h"
 
 #define OLM_PK_ENCRYPTION_FUNC_DEF(func_name) FUNC_DEF(OlmPkEncryption,func_name)
 #define OLM_PK_DECRYPTION_FUNC_DEF(func_name) FUNC_DEF(OlmPkDecryption,func_name)

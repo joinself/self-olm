@@ -34,7 +34,7 @@ JS_EXPORTED_FUNCTIONS := javascript/exported_functions.json
 JS_EXTRA_EXPORTED_RUNTIME_METHODS := ALLOC_STACK
 JS_EXTERNS := javascript/externs.js
 
-PUBLIC_HEADERS := include/olm/olm.h include/olm/outbound_group_session.h include/olm/inbound_group_session.h include/olm/pk.h include/olm/sas.h
+PUBLIC_HEADERS := include/self_olm/olm.h include/self_olm/outbound_group_session.h include/self_olm/inbound_group_session.h include/self_olm/pk.h include/self_olm/sas.h
 
 SOURCES := $(wildcard src/*.cpp) $(wildcard src/*.c) \
     lib/crypto-algorithms/sha256.c \
@@ -228,7 +228,7 @@ all: test js lib debug doc
 .PHONY: all
 
 install-headers: $(PUBLIC_HEADERS)
-	test -d $(DESTDIR)$(PREFIX)/include/olm || $(call mkdir,$(DESTDIR)$(PREFIX)/include/self_olm)
+	test -d $(DESTDIR)$(PREFIX)/include/self_olm || $(call mkdir,$(DESTDIR)$(PREFIX)/include/self_olm)
 	install -Dm644 $(PUBLIC_HEADERS) $(DESTDIR)$(PREFIX)/include/self_olm/
 .PHONY: install-headers
 

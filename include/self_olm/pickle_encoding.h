@@ -21,7 +21,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "olm/error.h"
+#include "self_olm/error.h"
 
 #ifdef __cplusplus
 extern "C" {

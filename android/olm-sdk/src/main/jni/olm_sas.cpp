@@ -16,13 +16,13 @@
 
 #include "olm_sas.h"
 
-#include "olm/olm.h"
+#include "self_olm/olm.h"
 
 using namespace AndroidOlmSdk;
 
 JNIEXPORT jlong OLM_SAS_FUNC_DEF(createNewSASJni)(JNIEnv *env, jobject thiz)
 {
-    
+
     size_t sasSize = olm_sas_size();
     OlmSAS *sasPtr = (OlmSAS *) malloc(sasSize);
     const char* errorMessage = NULL;
@@ -90,7 +90,7 @@ JNIEXPORT void OLM_SAS_FUNC_DEF(releaseSASJni)(JNIEnv *env, jobject thiz)
 }
 
 
-JNIEXPORT jbyteArray OLM_SAS_FUNC_DEF(getPubKeyJni)(JNIEnv *env, jobject thiz) 
+JNIEXPORT jbyteArray OLM_SAS_FUNC_DEF(getPubKeyJni)(JNIEnv *env, jobject thiz)
 {
     LOGD("## getPubKeyJni(): IN");
     const char* errorMessage = NULL;
@@ -131,7 +131,7 @@ JNIEXPORT jbyteArray OLM_SAS_FUNC_DEF(getPubKeyJni)(JNIEnv *env, jobject thiz)
 }
 
 JNIEXPORT void OLM_SAS_FUNC_DEF(setTheirPubKey)(JNIEnv *env, jobject thiz,jbyteArray pubKeyBuffer) {
-    
+
     OlmSAS* sasPtr = getOlmSasInstanceId(env, thiz);
 
     const char* errorMessage = NULL;
@@ -151,7 +151,7 @@ JNIEXPORT void OLM_SAS_FUNC_DEF(setTheirPubKey)(JNIEnv *env, jobject thiz,jbyteA
         LOGE(" ## setTheirPubKey(): failure - info JNI allocation OOM");
         errorMessage = "info JNI allocation OOM";
     }
-    else 
+    else
     {
         size_t pubKeyLength = (size_t)env->GetArrayLength(pubKeyBuffer);
         size_t result = olm_sas_set_their_key(sasPtr,pubKeyPtr,pubKeyLength);

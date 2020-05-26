@@ -15,9 +15,9 @@
 
 #include <cstdint>
 
-#include "olm/crypto.h"
-#include "olm/list.hh"
-#include "olm/error.h"
+#include "self_olm/crypto.h"
+#include "self_olm/list.hh"
+#include "self_olm/error.h"
 
 struct _olm_cipher;
 

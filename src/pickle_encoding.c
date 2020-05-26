@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#include "olm/pickle_encoding.h"
+#include "self_olm/pickle_encoding.h"
 
-#include "olm/base64.h"
-#include "olm/cipher.h"
-#include "olm/olm.h"
+#include "self_olm/base64.h"
+#include "self_olm/cipher.h"
+#include "self_olm/olm.h"
 
 static const struct _olm_cipher_aes_sha_256 PICKLE_CIPHER =
     OLM_CIPHER_INIT_AES_SHA_256("Pickle");

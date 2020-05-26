@@ -19,8 +19,8 @@
 #define _OLMOUTBOUND_GROUP_SESSION_H
 
 #include "olm_jni.h"
-#include "olm/olm.h"
-#include "olm/outbound_group_session.h"
+#include "self_olm/olm.h"
+#include "self_olm/outbound_group_session.h"
 
 #define OLM_OUTBOUND_GROUP_SESSION_FUNC_DEF(func_name) FUNC_DEF(OlmOutboundGroupSession,func_name)
 
