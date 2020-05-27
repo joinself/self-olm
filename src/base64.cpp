@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "olm/base64.h"
-#include "olm/base64.hh"
+#include "self_olm/base64.h"
+#include "self_olm/base64.hh"
 
 namespace {
 

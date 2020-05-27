@@ -19,8 +19,8 @@
 #define _OLMINBOUND_GROUP_SESSION_H
 
 #include "olm_jni.h"
-#include "olm/olm.h"
-#include "olm/inbound_group_session.h"
+#include "self_olm/olm.h"
+#include "self_olm/inbound_group_session.h"
 
 #define OLM_INBOUND_GROUP_SESSION_FUNC_DEF(func_name) FUNC_DEF(OlmInboundGroupSession,func_name)
 

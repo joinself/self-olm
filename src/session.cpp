@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "olm/session.hh"
-#include "olm/cipher.h"
-#include "olm/crypto.h"
-#include "olm/account.hh"
-#include "olm/memory.hh"
-#include "olm/message.hh"
-#include "olm/pickle.hh"
+#include "self_olm/session.hh"
+#include "self_olm/cipher.h"
+#include "self_olm/crypto.h"
+#include "self_olm/account.hh"
+#include "self_olm/memory.hh"
+#include "self_olm/message.hh"
+#include "self_olm/pickle.hh"
 
 #include <cstring>
 #include <stdio.h>

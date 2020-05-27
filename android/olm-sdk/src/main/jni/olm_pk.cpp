@@ -16,7 +16,7 @@
 
 #include "olm_pk.h"
 
-#include "olm/olm.h"
+#include "self_olm/olm.h"
 
 using namespace AndroidOlmSdk;
 

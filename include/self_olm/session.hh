@@ -15,7 +15,7 @@
 #ifndef OLM_SESSION_HH_
 #define OLM_SESSION_HH_
 
-#include "olm/ratchet.hh"
+#include "self_olm/ratchet.hh"
 
 namespace olm {
 

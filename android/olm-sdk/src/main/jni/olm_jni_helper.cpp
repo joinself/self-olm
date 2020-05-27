@@ -16,7 +16,7 @@
  */
 
 #include "olm_jni_helper.h"
-#include "olm/olm.h"
+#include "self_olm/olm.h"
 #include <sys/time.h>
 
 using namespace AndroidOlmSdk;

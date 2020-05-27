@@ -18,7 +18,7 @@
 #define _OMLSAS_H
 
 #include "olm_jni.h"
-#include "olm/sas.h"
+#include "self_olm/sas.h"
 
 #define OLM_SAS_FUNC_DEF(func_name) FUNC_DEF(OlmSAS,func_name)
 

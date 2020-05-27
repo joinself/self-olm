@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "olm/account.hh"
-#include "olm/base64.hh"
-#include "olm/pickle.h"
-#include "olm/pickle.hh"
-#include "olm/memory.hh"
+#include "self_olm/account.hh"
+#include "self_olm/base64.hh"
+#include "self_olm/pickle.h"
+#include "self_olm/pickle.hh"
+#include "self_olm/memory.hh"
 #include "sodium.h"
 
 olm::Account::Account(
@@ -182,7 +182,7 @@ std::size_t olm::Account::sign(
         last_error = OlmErrorCode::OLM_OUTPUT_BUFFER_TOO_SMALL;
         return std::size_t(-1);
     }
-    
+
     unsigned long long *smlen_p = (unsigned long long *)&signature_length;
     u_char *sk = (u_char *)&identity_keys.ed25519_key.private_key.private_key;
 

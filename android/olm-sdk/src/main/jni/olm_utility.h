@@ -19,7 +19,7 @@
 #define _OLMUTILITY_H
 
 #include "olm_jni.h"
-#include "olm/olm.h"
+#include "self_olm/olm.h"
 
 #define OLM_UTILITY_FUNC_DEF(func_name) FUNC_DEF(OlmUtility,func_name)
 
