@@ -85,8 +85,8 @@ publish:
   }
 
   function publish() {
-    echo $GCP_SA_CI | base64 -d > /build/gcp-sa-ci.json
-    gcloud auth activate-service-account --key-file /build/gcp-sa-ci.json
+    echo $GCP_SA_CI | base64 -d > /tmp/gcp-sa-ci.json
+    gcloud auth activate-service-account --key-file /tmp/gcp-sa-ci.json
     gsutil cp pkgs/libself-olm* gs://download.selfid.net/olm
   }
 
