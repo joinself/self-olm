@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.matrix.olm;
+package net.selfid.olm;
 
 import android.text.TextUtils;
 import android.util.Log;
@@ -449,4 +449,3 @@ public class OlmSession extends CommonSerializeUtils implements Serializable {
      **/
     private native long deserializeJni(byte[] aSerializedData, byte[] aKey);
 }
-

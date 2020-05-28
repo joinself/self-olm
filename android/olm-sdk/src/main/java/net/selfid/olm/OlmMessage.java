@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.matrix.olm;
+package net.selfid.olm;
 
 /**
  * Message class used in Olm sessions to contain the encrypted data.<br>

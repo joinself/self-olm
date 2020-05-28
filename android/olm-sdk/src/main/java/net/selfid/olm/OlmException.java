@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.matrix.olm;
+package net.selfid.olm;
 
 import java.io.IOException;
 

@@ -8,7 +8,7 @@ include $(PREBUILT_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 
 
-LOCAL_MODULE := olm
+LOCAL_MODULE := self_olm
 
 SRC_ROOT_DIR := ../../../../..
 

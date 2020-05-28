@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.matrix.olm;
+package net.selfid.olm;
 
 
 import android.support.test.runner.AndroidJUnit4;

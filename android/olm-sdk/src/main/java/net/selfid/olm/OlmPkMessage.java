@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.matrix.olm;
+package net.selfid.olm;
 
 public class OlmPkMessage {
     public String mCipherText;

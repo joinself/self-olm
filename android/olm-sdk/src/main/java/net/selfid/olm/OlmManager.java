@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.matrix.olm;
+package net.selfid.olm;
 
 import android.content.Context;
 import android.util.Log;
@@ -70,4 +70,3 @@ public class OlmManager {
     }
     public native String getOlmLibVersionJni();
 }
-
