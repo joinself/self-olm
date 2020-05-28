@@ -1,4 +1,9 @@
 /build
+/pkgs
+/self-olm-android-arm64-v8a
+/self-olm-android-armeabi-v7a
+/self-olm-android-x86
+/self-olm-android-x86_64
 /CHANGELOG.html
 /docs/megolm.html
 /docs/olm.html
