@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "olm/message.hh"
+#include "self_olm/message.hh"
 #include "unittest.hh"
 
 int main() {

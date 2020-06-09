@@ -1,6 +1,6 @@
-#include "olm/sas.h"
-#include "olm/crypto.h"
-#include "olm/olm.h"
+#include "self_olm/sas.h"
+#include "self_olm/crypto.h"
+#include "self_olm/olm.h"
 
 #include "unittest.hh"
 

@@ -1,5 +1,5 @@
-#include "olm/base64.hh"
-#include "olm/base64.h"
+#include "self_olm/base64.hh"
+#include "self_olm/base64.h"
 #include "unittest.hh"
 
 int main() {
