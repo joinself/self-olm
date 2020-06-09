@@ -67,7 +67,6 @@ set_target_properties(self_olm PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 
-
 find_library(sodium REQUIRED)
 target_link_libraries(self_olm sodium)
 
