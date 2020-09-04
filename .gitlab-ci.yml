@@ -67,3 +67,4 @@ publish:
     - *publish
   only:
     - master
+
