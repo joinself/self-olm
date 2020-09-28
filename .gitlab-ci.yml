@@ -9,7 +9,7 @@ stages:
 .build: &build |
   mkdir pkgs
 
-  docker run -v $PWD:/build aldgateventuresbot/c-crosscompile sh -c "cd /build && \
+  docker run -v $PWD:/build eu.gcr.io/principal-oxide-204416/c-cross-compile sh -c "cd /build && \
   make && \
   cd android && \
   echo 'ndk.dir=/opt/android-ndk' > local.properties && \
@@ -22,7 +22,7 @@ stages:
     tar -zcvf \"/build/pkgs/libself-olm-${version}-android-\$arch.tar.gz\" \"self-olm-android-\$arch\"; \
   done"
 
-  docker run -v $PWD:/build aldgateventuresbot/fpm sh -c "apt-get update && \
+  docker run -v $PWD:/build eu.gcr.io/principal-oxide-204416/fpm sh -c "apt-get update && \
   apt-get install -y libsodium-dev rpm && \
   cd /build && \
   mkdir -p self-olm-linux-x86_64/include/self_olm/ && \
@@ -44,7 +44,7 @@ before_script:
 
 build:
   stage: Build
-  image: aldgateventuresbot/deploy
+  image: eu.gcr.io/principal-oxide-204416/deploy
   services:
     - docker:19.03.2-dind
   script:
@@ -58,7 +58,7 @@ build:
 
 publish:
   stage: Publish
-  image: aldgateventuresbot/deploy
+  image: eu.gcr.io/principal-oxide-204416/deploy
   script:
     - ${SCRIPTS_DIR}/git-setup
     - version=$(${SCRIPTS_DIR}/git-new-version)
