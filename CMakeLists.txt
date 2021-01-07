@@ -5,7 +5,7 @@ include(ExternalProject)
 project(olm VERSION 3.1.4 LANGUAGES CXX C)
 
 option(OLM_TESTS "Build tests" ON)
-option(BUILD_SHARED_LIBS "Build as a shared library" ON)
+option(BUILD_SHARED_LIBS "Build as a shared library" OFF)
 
 add_definitions(-DOLMLIB_VERSION_MAJOR=${PROJECT_VERSION_MAJOR})
 add_definitions(-DOLMLIB_VERSION_MINOR=${PROJECT_VERSION_MINOR})
@@ -30,8 +30,8 @@ set (APPLE True)
 set (IOS True)
 
 set(CMAKE_SYSTEM_NAME iOS)
-set(CMAKE_SYSTEM_PROCESSOR arm)
-set(PLATFORM_NAME iphoneos)
+#set(CMAKE_SYSTEM_PROCESSOR arm)
+set(PLATFORM_NAME iphonesimulator)
 set(PLATFORM_FLAG_NAME ios)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET "" CACHE STRING "Force unset of the deployment target for iOS" FORCE)
@@ -44,17 +44,11 @@ set (CMAKE_SYSTEM_FRAMEWORK_PATH
     ${CMAKE_IOS_SDK_ROOT}/Developer/Library/Frameworks
 )
 
-
-# Set the architectures for which to build.
 #set(CMAKE_OSX_ARCHITECTURES arm64)
-# Setting CMAKE_OSX_SYSROOT SDK, when using Xcode generator the name is enough
-# but full path is necessary for others
+set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk")
 
-set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk")
-#set(CMAKE_OSX_SYSROOT /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk)
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -arch arm64 -miphoneos-version-min=11.0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch arm64 -miphoneos-version-min=11.0")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -arch x86_64 -miphoneos-version-min=11.0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -arch x86_64 -miphoneos-version-min=11.0")
 
 INCLUDE_DIRECTORIES(/usr/local/include/ios64)
 LINK_DIRECTORIES(/usr/local/lib/ios64)
