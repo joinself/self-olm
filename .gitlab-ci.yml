@@ -36,7 +36,7 @@ stages:
 .publish: &publish |
   echo $GCP_SA_CI | base64 -d > /tmp/gcp-sa-ci.json
   gcloud auth activate-service-account --key-file /tmp/gcp-sa-ci.json
-  gsutil cp pkgs/libself-olm* gs://download-29ea2c/olm
+  gsutil cp pkgs/libself-olm* gs://download.joinself.com/olm
 
 before_script:
   - export SCRIPTS_DIR=$(mktemp -d)
