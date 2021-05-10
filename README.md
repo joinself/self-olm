@@ -11,6 +11,18 @@ ratchet, as specified in [docs/megolm.md](docs/megolm.md).
 
 ## Building
 
+### Windows
+
+To build for windows, you will need to first install visual studio and libsodium via vcpkg
+```bash
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+bootstrap-vcpkg.bat
+vcpkg integrate install
+# Install for 64 bit
+vcpkg install libsodium:x64-windows
+```
+
 To build olm as a shared library run either:
 
 ```bash

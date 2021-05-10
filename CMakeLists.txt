@@ -68,8 +68,13 @@ set_target_properties(self_olm PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
 
 # Link libsodium
-find_library(sodium REQUIRED)
-target_link_libraries(self_olm sodium)
+if(WIN32)
+    find_package(unofficial-sodium CONFIG REQUIRED)
+    target_link_libraries(self_olm PRIVATE unofficial-sodium::sodium)
+else()
+    find_library(sodium REQUIRED)
+    target_link_libraries(self_olm sodium)
+endif()
 
 #
 # Installation
