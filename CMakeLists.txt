@@ -75,7 +75,7 @@ elseif(APPLE)
     find_library(sodium REQUIRED NAMES libsodium.dylib PATHS /usr/local/lib)
     target_link_libraries(self_olm sodium)
 else()
-    find_library(sodium REQUIRED)
+    find_library(sodium REQUIRED NAMES libsodium.so PATHS /usr/local/lib)
     target_link_libraries(self_olm sodium)
 endif()
 
