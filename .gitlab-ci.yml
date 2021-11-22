@@ -3,8 +3,9 @@ variables:
   DOCKER_TLS_CERTDIR: ""
 
 stages:
-  - Build
-  - Publish
+  - prebuild
+  - build
+  - publish
 
 .build: &build |
   mkdir pkgs
@@ -42,8 +43,18 @@ before_script:
   - export SCRIPTS_DIR=$(mktemp -d)
   - git clone -q --depth 1 "${SCRIPTS_REPO}" "${SCRIPTS_DIR}"
 
+git-leak:
+  stage: prebuild
+  image: docker:stable-git
+  services:
+    - docker:19.03.2-dind
+  script:
+    - docker run -v ${PWD}:/repo zricethezav/gitleaks --path=/repo --redact -v
+  only:
+    - branches
+
 build:
-  stage: Build
+  stage: build
   image: eu.gcr.io/principal-oxide-204416/tools
   services:
     - docker:19.03.2-dind
@@ -58,7 +69,7 @@ build:
     - branches
 
 publish:
-  stage: Publish
+  stage: publish
   image: eu.gcr.io/principal-oxide-204416/tools
   script:
     - ${SCRIPTS_DIR}/git-setup
