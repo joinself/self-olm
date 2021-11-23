@@ -43,13 +43,14 @@ before_script:
   - export SCRIPTS_DIR=$(mktemp -d)
   - git clone -q --depth 1 "${SCRIPTS_REPO}" "${SCRIPTS_DIR}"
 
-git-leak:
+secrets-check:
   stage: prebuild
   image: docker:stable-git
   services:
     - docker:19.03.2-dind
   script:
-    - docker run -v ${PWD}:/repo zricethezav/gitleaks --path=/repo --redact -v
+    - ${SCRIPTS_DIR}/git-secrets
+  allow_failure: true
   only:
     - branches
 
