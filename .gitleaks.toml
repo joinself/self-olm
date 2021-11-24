@@ -445,6 +445,5 @@ regex = '''(?i)(typeform[a-z0-9_ .\-,]{0,25})(=|>|:=|\|\|:|<=|=>|:).{0,5}(tfp_[a
 [allowlist]
 description = "global allow lists"
 regexes = ['''219-09-9999''', '''078-05-1120''', '''(9[0-9]{2}|666)-\d{2}-\d{4}''']
-files = ['''(.*?)(jpg|gif|doc|pdf|bin|svg|socket)$''']
+paths = ['''(.*?)(jpg|gif|doc|pdf|bin|svg|socket)$''', '''.gitleaks.toml''']
 commits = [ "6c56bcf2fd3db38c679b9cf9345051a7309fa02f" ]
-
