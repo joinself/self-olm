@@ -50,6 +50,7 @@ secrets-check:
     - docker:19.03.2-dind
   script:
     - ${SCRIPTS_DIR}/git-secrets
+  allow_failure: true
   only:
     - branches
 
