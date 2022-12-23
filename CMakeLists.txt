@@ -57,8 +57,8 @@ add_library(Olm::Olm ALIAS self_olm)
 
 # restrict the exported symbols
 include(GenerateExportHeader)
-generate_export_header(olm
-  EXPORT_FILE_NAME ${CMAKE_CURRENT_SOURCE_DIR}/include/olm/olm_export.h)
+#generate_export_header(olm
+#  EXPORT_FILE_NAME ${CMAKE_CURRENT_SOURCE_DIR}/include/self_olm/olm_export.h)
 
 target_include_directories(self_olm
     PUBLIC

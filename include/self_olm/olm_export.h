@@ -7,7 +7,7 @@
 #  define OLM_NO_EXPORT
 #else
 #  ifndef OLM_EXPORT
-#    ifdef olm_EXPORTS
+#    ifdef self_olm_EXPORTS
         /* We are building this library */
 #      define OLM_EXPORT __attribute__((visibility("default")))
 #    else
