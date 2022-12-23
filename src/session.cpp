@@ -49,7 +49,7 @@ olm::Session::Session(
 }
 
 
-std::size_t olm::Session::new_outbound_session_random_length() {
+std::size_t olm::Session::new_outbound_session_random_length() const {
     return CURVE25519_RANDOM_LENGTH * 2;
 }
 
@@ -193,7 +193,7 @@ std::size_t olm::Session::new_inbound_session(
 }
 
 
-std::size_t olm::Session::session_id_length() {
+std::size_t olm::Session::session_id_length() const {
     return SHA256_OUTPUT_LENGTH;
 }
 
@@ -218,7 +218,7 @@ std::size_t olm::Session::session_id(
 bool olm::Session::matches_inbound_session(
     _olm_curve25519_public_key const * their_identity_key,
     std::uint8_t const * one_time_key_message, std::size_t message_length
-) {
+) const {
     olm::PreKeyMessageReader reader;
     decode_one_time_key_message(reader, one_time_key_message, message_length);
 
@@ -248,7 +248,7 @@ bool olm::Session::matches_inbound_session(
 }
 
 
-olm::MessageType olm::Session::encrypt_message_type() {
+olm::MessageType olm::Session::encrypt_message_type() const {
     if (received_message) {
         return olm::MessageType::MESSAGE;
     } else {
@@ -259,7 +259,7 @@ olm::MessageType olm::Session::encrypt_message_type() {
 
 std::size_t olm::Session::encrypt_message_length(
     std::size_t plaintext_length
-) {
+) const {
     std::size_t message_length = ratchet.encrypt_output_length(
         plaintext_length
     );
@@ -277,7 +277,7 @@ std::size_t olm::Session::encrypt_message_length(
 }
 
 
-std::size_t olm::Session::encrypt_random_length() {
+std::size_t olm::Session::encrypt_random_length() const {
     return ratchet.encrypt_random_length();
 }
 
@@ -398,39 +398,71 @@ std::size_t olm::Session::decrypt(
     return result;
 }
 
+// make the description end with "..." instead of stopping abruptly with no
+// warning
+void elide_description(char *end) {
+    end[-3] = '.';
+    end[-2] = '.';
+    end[-1] = '.';
+    end[0] = '\0';
+}
+
 void olm::Session::describe(char *describe_buffer, size_t buflen) {
-    if (buflen == 0) return;
+    // how much of the buffer is remaining (this is an int rather than a size_t
+    // because it will get compared to the return value from snprintf)
+    int remaining = buflen;
+    // do nothing if we have a zero-length buffer, or if buflen > INT_MAX,
+    // resulting in an overflow
+    if (remaining <= 0) return;
 
     describe_buffer[0] = '\0';
-    char *buf_pos = describe_buffer;
+    // we need at least 23 characters to get any sort of meaningful
+    // information, so bail if we don't have that.  (But more importantly, we
+    // need it to be at least 4 so that elide_description doesn't go out of
+    // bounds.)
+    if (remaining < 23) return;
 
     int size;
 
+    // check that snprintf didn't return an error or reach the end of the buffer
+#define CHECK_SIZE_AND_ADVANCE                                          \
+    if (size > remaining) {                                             \
+        return elide_description(describe_buffer + remaining - 1);      \
+    } else if (size > 0) {                                              \
+        describe_buffer += size;                                        \
+        remaining -= size;                                              \
+    } else {                                                            \
+        return;                                                         \
+    }
+
     size = snprintf(
-        buf_pos, buflen - (buf_pos - describe_buffer),
+        describe_buffer, remaining,
         "sender chain index: %d ", ratchet.sender_chain[0].chain_key.index
     );
-    if (size > 0) buf_pos += size;
+    CHECK_SIZE_AND_ADVANCE;
 
-    size = snprintf(buf_pos, buflen - (buf_pos - describe_buffer), "receiver chain indices:");
-    if (size > 0) buf_pos += size;
+    size = snprintf(describe_buffer, remaining, "receiver chain indices:");
+    CHECK_SIZE_AND_ADVANCE;
+
     for (size_t i = 0; i < ratchet.receiver_chains.size(); ++i) {
         size = snprintf(
-            buf_pos, buflen - (buf_pos - describe_buffer),
+            describe_buffer, remaining,
             " %d", ratchet.receiver_chains[i].chain_key.index
         );
-        if (size > 0) buf_pos += size;
+        CHECK_SIZE_AND_ADVANCE;
     }
 
-    size = snprintf(buf_pos, buflen - (buf_pos - describe_buffer), " skipped message keys:");
-    if (size >= 0) buf_pos += size;
+    size = snprintf(describe_buffer, remaining, " skipped message keys:");
+    CHECK_SIZE_AND_ADVANCE;
+
     for (size_t i = 0; i < ratchet.skipped_message_keys.size(); ++i) {
         size = snprintf(
-            buf_pos, buflen - (buf_pos - describe_buffer),
+            describe_buffer, remaining,
             " %d", ratchet.skipped_message_keys[i].message_key.index
         );
-        if (size > 0) buf_pos += size;
+        CHECK_SIZE_AND_ADVANCE;
     }
+#undef CHECK_SIZE_AND_ADVANCE
 }
 
 namespace {
@@ -472,7 +504,7 @@ std::uint8_t const * olm::unpickle(
     Session & value
 ) {
     uint32_t pickle_version;
-    pos = olm::unpickle(pos, end, pickle_version);
+    pos = olm::unpickle(pos, end, pickle_version); UNPICKLE_OK(pos);
 
     bool includes_chain_index;
     switch (pickle_version) {
@@ -486,13 +518,14 @@ std::uint8_t const * olm::unpickle(
 
         default:
             value.last_error = OlmErrorCode::OLM_UNKNOWN_PICKLE_VERSION;
-            return end;
+            return nullptr;
     }
 
-    pos = olm::unpickle(pos, end, value.received_message);
-    pos = olm::unpickle(pos, end, value.alice_identity_key);
-    pos = olm::unpickle(pos, end, value.alice_base_key);
-    pos = olm::unpickle(pos, end, value.bob_one_time_key);
-    pos = olm::unpickle(pos, end, value.ratchet, includes_chain_index);
+    pos = olm::unpickle(pos, end, value.received_message); UNPICKLE_OK(pos);
+    pos = olm::unpickle(pos, end, value.alice_identity_key); UNPICKLE_OK(pos);
+    pos = olm::unpickle(pos, end, value.alice_base_key); UNPICKLE_OK(pos);
+    pos = olm::unpickle(pos, end, value.bob_one_time_key); UNPICKLE_OK(pos);
+    pos = olm::unpickle(pos, end, value.ratchet, includes_chain_index); UNPICKLE_OK(pos);
+
     return pos;
 }

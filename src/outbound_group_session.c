@@ -61,6 +61,12 @@ const char *olm_outbound_group_session_last_error(
     return _olm_error_to_string(session->last_error);
 }
 
+enum OlmErrorCode olm_outbound_group_session_last_error_code(
+    const OlmOutboundGroupSession *session
+) {
+    return session->last_error;
+}
+
 size_t olm_clear_outbound_group_session(
     OlmOutboundGroupSession *session
 ) {
@@ -97,12 +103,21 @@ size_t olm_pickle_outbound_group_session(
         return (size_t)-1;
     }
 
+#ifndef OLM_FUZZING
     pos = _olm_enc_output_pos(pickled, raw_length);
+#else
+    pos = pickled;
+#endif
+
     pos = _olm_pickle_uint32(pos, PICKLE_VERSION);
     pos = megolm_pickle(&(session->ratchet), pos);
     pos = _olm_pickle_ed25519_key_pair(pos, &(session->signing_key));
 
+#ifndef OLM_FUZZING
     return _olm_enc_output(key, key_length, pickled, raw_length);
+#else
+    return raw_length;
+#endif
 }
 
 size_t olm_unpickle_outbound_group_session(
@@ -114,26 +129,38 @@ size_t olm_unpickle_outbound_group_session(
     const uint8_t *end;
     uint32_t pickle_version;
 
+#ifndef OLM_FUZZING
     size_t raw_length = _olm_enc_input(
         key, key_length, pickled, pickled_length, &(session->last_error)
     );
+#else
+    size_t raw_length = pickled_length;
+#endif
+
     if (raw_length == (size_t)-1) {
         return raw_length;
     }
 
     pos = pickled;
     end = pos + raw_length;
+
     pos = _olm_unpickle_uint32(pos, end, &pickle_version);
+    FAIL_ON_CORRUPTED_PICKLE(pos, session);
+
     if (pickle_version != PICKLE_VERSION) {
         session->last_error = OLM_UNKNOWN_PICKLE_VERSION;
         return (size_t)-1;
     }
-    pos = megolm_unpickle(&(session->ratchet), pos, end);
-    pos = _olm_unpickle_ed25519_key_pair(pos, end, &(session->signing_key));
 
-    if (end != pos) {
-        /* We had the wrong number of bytes in the input. */
-        session->last_error = OLM_CORRUPTED_PICKLE;
+    pos = megolm_unpickle(&(session->ratchet), pos, end);
+    FAIL_ON_CORRUPTED_PICKLE(pos, session);
+
+    pos = _olm_unpickle_ed25519_key_pair(pos, end, &(session->signing_key));
+    FAIL_ON_CORRUPTED_PICKLE(pos, session);
+
+    if (pos != end) {
+        /* Input was longer than expected. */
+        session->last_error = OLM_PICKLE_EXTRA_DATA;
         return (size_t)-1;
     }
 

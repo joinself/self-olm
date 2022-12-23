@@ -37,10 +37,16 @@ struct OlmPkEncryption {
 };
 
 const char * olm_pk_encryption_last_error(
-    OlmPkEncryption * encryption
+    const OlmPkEncryption * encryption
 ) {
     auto error = encryption->last_error;
     return _olm_error_to_string(error);
+}
+
+OlmErrorCode olm_pk_encryption_last_error_code(
+    const OlmPkEncryption * encryption
+) {
+    return encryption->last_error;
 }
 
 size_t olm_pk_encryption_size(void) {
@@ -73,16 +79,18 @@ size_t olm_pk_encryption_set_recipient_key (
             OlmErrorCode::OLM_INPUT_BUFFER_TOO_SMALL;
         return std::size_t(-1);
     }
+
     olm::decode_base64(
         (const uint8_t*)key,
         olm_pk_key_length(),
         (uint8_t *)encryption->recipient_key.public_key
     );
+
     return 0;
 }
 
 size_t olm_pk_ciphertext_length(
-    OlmPkEncryption *encryption,
+    const OlmPkEncryption *encryption,
     size_t plaintext_length
 ) {
     return olm::encode_base64_length(
@@ -91,13 +99,13 @@ size_t olm_pk_ciphertext_length(
 }
 
 size_t olm_pk_mac_length(
-    OlmPkEncryption *encryption
+    const OlmPkEncryption *encryption
 ) {
     return olm::encode_base64_length(_olm_cipher_aes_sha_256_ops.mac_length(olm_pk_cipher));
 }
 
 size_t olm_pk_encrypt_random_length(
-    OlmPkEncryption *encryption
+    const OlmPkEncryption *encryption
 ) {
     return CURVE25519_KEY_LENGTH;
 }
@@ -160,10 +168,16 @@ struct OlmPkDecryption {
 };
 
 const char * olm_pk_decryption_last_error(
-    OlmPkDecryption * decryption
+    const OlmPkDecryption * decryption
 ) {
     auto error = decryption->last_error;
     return _olm_error_to_string(error);
+}
+
+OlmErrorCode olm_pk_decryption_last_error_code(
+    const OlmPkDecryption * decryption
+) {
+    return decryption->last_error;
 }
 
 size_t olm_pk_decryption_size(void) {
@@ -260,7 +274,7 @@ namespace {
         OlmPkDecryption & value
     ) {
         uint32_t pickle_version;
-        pos = olm::unpickle(pos, end, pickle_version);
+        pos = olm::unpickle(pos, end, pickle_version); UNPICKLE_OK(pos);
 
         switch (pickle_version) {
         case 1:
@@ -268,16 +282,17 @@ namespace {
 
         default:
             value.last_error = OlmErrorCode::OLM_UNKNOWN_PICKLE_VERSION;
-            return end;
+            return nullptr;
         }
 
-        pos = olm::unpickle(pos, end, value.key_pair);
+        pos = olm::unpickle(pos, end, value.key_pair); UNPICKLE_OK(pos);
+
         return pos;
     }
 }
 
 size_t olm_pickle_pk_decryption_length(
-    OlmPkDecryption * decryption
+    const OlmPkDecryption * decryption
 ) {
     return _olm_enc_output_length(pickle_length(*decryption));
 }
@@ -311,25 +326,32 @@ size_t olm_unpickle_pk_decryption(
         object.last_error = OlmErrorCode::OLM_OUTPUT_BUFFER_TOO_SMALL;
         return std::size_t(-1);
     }
-    std::uint8_t * const pos = reinterpret_cast<std::uint8_t *>(pickled);
+    std::uint8_t * const input = reinterpret_cast<std::uint8_t *>(pickled);
     std::size_t raw_length = _olm_enc_input(
         reinterpret_cast<std::uint8_t const *>(key), key_length,
-        pos, pickled_length, &object.last_error
+        input, pickled_length, &object.last_error
     );
     if (raw_length == std::size_t(-1)) {
         return std::size_t(-1);
     }
-    std::uint8_t * const end = pos + raw_length;
-    /* On success unpickle will return (pos + raw_length). If unpickling
-     * terminates too soon then it will return a pointer before
-     * (pos + raw_length). On error unpickle will return (pos + raw_length + 1).
-     */
-    if (end != unpickle(pos, end + 1, object)) {
+
+    std::uint8_t const * pos = input;
+    std::uint8_t const * end = pos + raw_length;
+
+    pos = unpickle(pos, end, object);
+
+    if (!pos) {
+        /* Input was corrupted. */
         if (object.last_error == OlmErrorCode::OLM_SUCCESS) {
             object.last_error = OlmErrorCode::OLM_CORRUPTED_PICKLE;
         }
         return std::size_t(-1);
+    } else if (pos != end) {
+        /* Input was longer than expected. */
+        object.last_error = OlmErrorCode::OLM_PICKLE_EXTRA_DATA;
+        return std::size_t(-1);
     }
+
     if (pubkey != NULL) {
         olm::encode_base64(
             (const uint8_t *)object.key_pair.public_key.public_key,
@@ -337,11 +359,12 @@ size_t olm_unpickle_pk_decryption(
             (uint8_t *)pubkey
         );
     }
+
     return pickled_length;
 }
 
 size_t olm_pk_max_plaintext_length(
-    OlmPkDecryption * decryption,
+    const OlmPkDecryption * decryption,
     size_t ciphertext_length
 ) {
     return _olm_cipher_aes_sha_256_ops.decrypt_max_plaintext_length(
@@ -363,17 +386,38 @@ size_t olm_pk_decrypt(
         return std::size_t(-1);
     }
 
+    size_t raw_ciphertext_length = olm::decode_base64_length(ciphertext_length);
+
+    if (ephemeral_key_length != olm::encode_base64_length(CURVE25519_KEY_LENGTH)
+        || mac_length != olm::encode_base64_length(MAC_LENGTH)
+        || raw_ciphertext_length == std::size_t(-1)) {
+        decryption->last_error = OlmErrorCode::OLM_INVALID_BASE64;
+        return std::size_t(-1);
+    }
+
     struct _olm_curve25519_public_key ephemeral;
     olm::decode_base64(
-        (const uint8_t*)ephemeral_key, ephemeral_key_length,
+        (const uint8_t*)ephemeral_key,
+        olm::encode_base64_length(CURVE25519_KEY_LENGTH),
         (uint8_t *)ephemeral.public_key
     );
+
     olm::SharedKey secret;
     _olm_crypto_curve25519_shared_secret(&decryption->key_pair, &ephemeral, secret);
+
     uint8_t raw_mac[MAC_LENGTH];
-    olm::decode_base64((const uint8_t*)mac, olm::encode_base64_length(MAC_LENGTH), raw_mac);
-    size_t raw_ciphertext_length = olm::decode_base64_length(ciphertext_length);
-    olm::decode_base64((const uint8_t *)ciphertext, ciphertext_length, (uint8_t *)ciphertext);
+    olm::decode_base64(
+        (const uint8_t *)mac,
+        olm::encode_base64_length(MAC_LENGTH),
+        raw_mac
+    );
+
+    olm::decode_base64(
+        (const uint8_t *)ciphertext,
+        ciphertext_length,
+        (uint8_t *)ciphertext
+    );
+
     size_t result = _olm_cipher_aes_sha_256_ops.decrypt(
         olm_pk_cipher,
         secret, sizeof(secret),
@@ -423,9 +467,13 @@ OlmPkSigning *olm_pk_signing(void * memory) {
     return new(memory) OlmPkSigning;
 }
 
-const char * olm_pk_signing_last_error(OlmPkSigning * sign) {
+const char * olm_pk_signing_last_error(const OlmPkSigning * sign) {
     auto error = sign->last_error;
     return _olm_error_to_string(error);
+}
+
+OlmErrorCode olm_pk_signing_last_error_code(const OlmPkSigning * sign) {
+    return sign->last_error;
 }
 
 size_t olm_clear_pk_signing(OlmPkSigning *sign) {

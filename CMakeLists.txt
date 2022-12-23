@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.4)
 
 include(ExternalProject)
 
-project(olm VERSION 3.1.4 LANGUAGES CXX C)
+project(olm VERSION 3.2.14 LANGUAGES CXX C)
 
 option(OLM_TESTS "Build tests" ON)
 option(BUILD_SHARED_LIBS "Build as a shared library" ON)
@@ -22,6 +22,10 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
+
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 add_library(self_olm
     src/account.cpp
@@ -51,6 +55,11 @@ add_library(self_olm
 add_library(Olm::Olm ALIAS self_olm)
 
 
+# restrict the exported symbols
+include(GenerateExportHeader)
+#generate_export_header(olm
+#  EXPORT_FILE_NAME ${CMAKE_CURRENT_SOURCE_DIR}/include/self_olm/olm_export.h)
+
 target_include_directories(self_olm
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -63,9 +72,14 @@ set_target_properties(self_olm PROPERTIES
    VERSION ${PROJECT_VERSION})
 
 set_target_properties(self_olm PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR})
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+
+include(GNUInstallDirs)
+
+# Make a pkg-config file
+configure_file(${PROJECT_NAME}.pc.in ${PROJECT_NAME}.pc @ONLY NEWLINE_STYLE UNIX)
 
 # Link libsodium
 if(WIN32)
@@ -82,7 +96,6 @@ endif()
 #
 # Installation
 #
-include(GNUInstallDirs)
 set(INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/Olm)
 install(TARGETS self_olm
     EXPORT olm-targets
@@ -94,12 +107,20 @@ install(TARGETS self_olm
 # The exported target will be named Olm.
 set_target_properties(self_olm PROPERTIES EXPORT_NAME Olm)
 install(FILES
-    ${CMAKE_SOURCE_DIR}/include/self_olm/olm.h
-    ${CMAKE_SOURCE_DIR}/include/self_olm/outbound_group_session.h
-    ${CMAKE_SOURCE_DIR}/include/self_olm/inbound_group_session.h
-    ${CMAKE_SOURCE_DIR}/include/self_olm/pk.h
-    ${CMAKE_SOURCE_DIR}/include/self_olm/sas.h
-DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/self_olm)
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/self_olm/olm.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/self_olm/olm_export.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/self_olm/outbound_group_session.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/self_olm/inbound_group_session.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/self_olm/pk.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/self_olm/sas.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/self_olm/error.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/self_olm)
+
+if (UNIX AND NOT APPLE)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+    )
+endif ()
 
 # Export the targets to a script.
 install(EXPORT olm-targets

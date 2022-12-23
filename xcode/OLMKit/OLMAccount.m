@@ -21,8 +21,9 @@
 #import "OLMSession.h"
 #import "OLMSession_Private.h"
 #import "OLMUtility.h"
+#import "OLMKit.h"
 
-@import Security;
+#import <Security/Security.h>
 
 @implementation OLMAccount
 
@@ -144,11 +145,71 @@
     return keysDictionary;
 }
 
-
 - (void) generateOneTimeKeys:(NSUInteger)numberOfKeys {
     size_t randomLength = olm_account_generate_one_time_keys_random_length(_account, numberOfKeys);
     NSMutableData *random = [OLMUtility randomBytesOfLength:randomLength];
     size_t result = olm_account_generate_one_time_keys(_account, numberOfKeys, random.mutableBytes, random.length);
+    [random resetBytesInRange:NSMakeRange(0, random.length)];
+    if (result == olm_error()) {
+        const char *error = olm_account_last_error(_account);
+        NSLog(@"error generating keys: %s", error);
+    }
+}
+
+- (NSDictionary *) fallbackKey {
+    size_t fallbackKeyLength = olm_account_fallback_key_length(_account);
+    uint8_t *fallbackKeyBytes = malloc(fallbackKeyLength);
+    if (!fallbackKeyBytes) {
+        return nil;
+    }
+    
+    size_t result = olm_account_fallback_key(_account, fallbackKeyBytes, fallbackKeyLength);
+    if (result == olm_error()) {
+        const char *error = olm_account_last_error(_account);
+        NSLog(@"error getting fallback key: %s", error);
+        free(fallbackKeyBytes);
+        return nil;
+    }
+    NSData *fallbackKeyData = [NSData dataWithBytesNoCopy:fallbackKeyBytes length:fallbackKeyLength freeWhenDone:YES];
+    NSError *error = nil;
+    NSDictionary *keyDictionary = [NSJSONSerialization JSONObjectWithData:fallbackKeyData options:0 error:&error];
+    if (error) {
+        NSLog(@"Could not decode JSON: %@", error.localizedDescription);
+    }
+    return keyDictionary;
+}
+
+- (NSDictionary *) unpublishedFallbackKey {
+    size_t fallbackKeyLength = olm_account_unpublished_fallback_key_length(_account);
+    uint8_t *fallbackKeyBytes = malloc(fallbackKeyLength);
+    if (!fallbackKeyBytes) {
+        return nil;
+    }
+    
+    size_t result = olm_account_unpublished_fallback_key(_account, fallbackKeyBytes, fallbackKeyLength);
+    if (result == olm_error()) {
+        const char *error = olm_account_last_error(_account);
+        NSLog(@"error getting unpublished fallback key: %s", error);
+        free(fallbackKeyBytes);
+        return nil;
+    }
+    NSData *fallbackKeyData = [NSData dataWithBytesNoCopy:fallbackKeyBytes length:fallbackKeyLength freeWhenDone:YES];
+    NSError *error = nil;
+    NSDictionary *keyDictionary = [NSJSONSerialization JSONObjectWithData:fallbackKeyData options:0 error:&error];
+    if (error) {
+        NSLog(@"Could not decode JSON for unpublished fallback: %@", error.localizedDescription);
+    }
+    return keyDictionary;
+}
+
+- (void) forgetFallbackKey {
+    olm_account_forget_old_fallback_key(self.account);
+}
+
+- (void) generateFallbackKey {
+    size_t randomLength = olm_account_generate_fallback_key_random_length(_account);
+    NSMutableData *random = [OLMUtility randomBytesOfLength:randomLength];
+    size_t result = olm_account_generate_fallback_key(_account, random.mutableBytes, random.length);
     [random resetBytesInRange:NSMakeRange(0, random.length)];
     if (result == olm_error()) {
         const char *error = olm_account_last_error(_account);
@@ -243,6 +304,13 @@
 
         self = [self initWithSerializedData:pickle key:key error:&error];
     }
+    else if ([version isEqualToString:@"2"]) {
+        NSString *pickle = [decoder decodeObjectOfClass:[NSString class] forKey:@"pickle"];
+        NSData *key = OLMKit.sharedInstance.pickleKeyDelegate.pickleKey;
+        NSParameterAssert(key);
+        
+        self = [self initWithSerializedData:pickle key:key error:&error];
+    }
     
     NSParameterAssert(error == nil);
     NSParameterAssert(self != nil);
@@ -254,14 +322,23 @@
 }
 
 - (void)encodeWithCoder:(NSCoder *)encoder {
-    NSData *key = [OLMUtility randomBytesOfLength:32];
+    NSData *key = OLMKit.sharedInstance.pickleKeyDelegate.pickleKey;
+    if (key)
+    {
+        [encoder encodeObject:@"2" forKey:@"version"];
+    }
+    else
+    {
+        key = [OLMUtility randomBytesOfLength:32];
+        [encoder encodeObject:key forKey:@"key"];
+        [encoder encodeObject:@"1" forKey:@"version"];
+    }
+    
     NSError *error = nil;
     NSString *pickle = [self serializeDataWithKey:key error:&error];
     NSParameterAssert(pickle.length > 0 && error == nil);
     
     [encoder encodeObject:pickle forKey:@"pickle"];
-    [encoder encodeObject:key forKey:@"key"];
-    [encoder encodeObject:@"1" forKey:@"version"];
 }
 
 

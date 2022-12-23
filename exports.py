@@ -1,12 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import re
 import json
 
-expr = re.compile(r"(olm_[^( ]*)\(")
+expr = re.compile(r"(_*olm_[^( ]*)\(")
 
-exports = set()
+exports = {'_free', '_malloc'}
 
 for f in sys.argv[1:]:
     with open(f) as fp:

@@ -19,7 +19,7 @@ var Olm = require('../olm');
 describe("sas", function() {
     var alice, bob;
 
-    beforeEach(async function(done) {
+    beforeEach(function(done) {
         Olm.init().then(function() {
             alice = new Olm.SAS();
             bob = new Olm.SAS();
@@ -49,5 +49,14 @@ describe("sas", function() {
         alice.set_their_key(bob.get_pubkey());
         bob.set_their_key(alice.get_pubkey());
         expect(alice.calculate_mac("test", "MAC").toString()).toEqual(bob.calculate_mac("test", "MAC").toString());
+    });
+
+    it('should fail to generate bytes if their key is not set', function () {
+        expect(alice.is_their_key_set()).toBeFalsy();
+        expect(() => {
+            alice.generate_bytes("SAS", 5);
+        }).toThrow();
+        alice.set_their_key(bob.get_pubkey());
+        expect(alice.is_their_key_set()).toBeTruthy();
     });
 });
