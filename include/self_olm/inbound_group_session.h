@@ -18,9 +18,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "olm/error.h"
+#include "self_olm/error.h"
 
-#include "olm/olm_export.h"
+#include "self_olm/olm_export.h"
 
 #ifdef __cplusplus
 extern "C" {

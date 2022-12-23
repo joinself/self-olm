@@ -22,7 +22,7 @@
 
 // Note: exports in this file are only for unit tests.  Nobody else should be
 // using this externally
-#include "olm/olm_export.h"
+#include "self_olm/olm_export.h"
 
 #include <stdint.h>
 #include <stdlib.h>

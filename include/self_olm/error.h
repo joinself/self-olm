@@ -15,7 +15,7 @@
 #ifndef OLM_ERROR_H_
 #define OLM_ERROR_H_
 
-#include "olm/olm_export.h"
+#include "self_olm/olm_export.h"
 
 #ifdef __cplusplus
 extern "C" {
