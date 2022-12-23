@@ -280,9 +280,9 @@ static std::uint8_t const * unpickle(
     std::uint8_t const * pos, std::uint8_t const * end,
     olm::SenderChain & value
 ) {
-    pos = olm::unpickle(pos, end, value.ratchet_key);
-    pos = olm::unpickle(pos, end, value.chain_key.key);
-    pos = olm::unpickle(pos, end, value.chain_key.index);
+    pos = olm::unpickle(pos, end, value.ratchet_key); UNPICKLE_OK(pos);
+    pos = olm::unpickle(pos, end, value.chain_key.key); UNPICKLE_OK(pos);
+    pos = olm::unpickle(pos, end, value.chain_key.index); UNPICKLE_OK(pos);
     return pos;
 }
 
@@ -312,9 +312,9 @@ static std::uint8_t const * unpickle(
     std::uint8_t const * pos, std::uint8_t const * end,
     olm::ReceiverChain & value
 ) {
-    pos = olm::unpickle(pos, end, value.ratchet_key);
-    pos = olm::unpickle(pos, end, value.chain_key.key);
-    pos = olm::unpickle(pos, end, value.chain_key.index);
+    pos = olm::unpickle(pos, end, value.ratchet_key); UNPICKLE_OK(pos);
+    pos = olm::unpickle(pos, end, value.chain_key.key); UNPICKLE_OK(pos);
+    pos = olm::unpickle(pos, end, value.chain_key.index); UNPICKLE_OK(pos);
     return pos;
 }
 
@@ -345,9 +345,9 @@ static std::uint8_t const * unpickle(
     std::uint8_t const * pos, std::uint8_t const * end,
     olm::SkippedMessageKey & value
 ) {
-    pos = olm::unpickle(pos, end, value.ratchet_key);
-    pos = olm::unpickle(pos, end, value.message_key.key);
-    pos = olm::unpickle(pos, end, value.message_key.index);
+    pos = olm::unpickle(pos, end, value.ratchet_key); UNPICKLE_OK(pos);
+    pos = olm::unpickle(pos, end, value.message_key.key); UNPICKLE_OK(pos);
+    pos = olm::unpickle(pos, end, value.message_key.index); UNPICKLE_OK(pos);
     return pos;
 }
 
@@ -383,15 +383,15 @@ std::uint8_t const * olm::unpickle(
     olm::Ratchet & value,
     bool includes_chain_index
 ) {
-    pos = unpickle(pos, end, value.root_key);
-    pos = unpickle(pos, end, value.sender_chain);
-    pos = unpickle(pos, end, value.receiver_chains);
-    pos = unpickle(pos, end, value.skipped_message_keys);
+    pos = unpickle(pos, end, value.root_key); UNPICKLE_OK(pos);
+    pos = unpickle(pos, end, value.sender_chain); UNPICKLE_OK(pos);
+    pos = unpickle(pos, end, value.receiver_chains); UNPICKLE_OK(pos);
+    pos = unpickle(pos, end, value.skipped_message_keys); UNPICKLE_OK(pos);
 
     // pickle v 0x80000001 includes a chain index; pickle v1 does not.
     if (includes_chain_index) {
         std::uint32_t dummy;
-        pos = unpickle(pos, end, dummy);
+        pos = unpickle(pos, end, dummy); UNPICKLE_OK(pos);
     }
     return pos;
 }
@@ -399,7 +399,7 @@ std::uint8_t const * olm::unpickle(
 
 std::size_t olm::Ratchet::encrypt_output_length(
     std::size_t plaintext_length
-) {
+) const {
     std::size_t counter = 0;
     if (!sender_chain.empty()) {
         counter = sender_chain[0].chain_key.index;
@@ -414,7 +414,7 @@ std::size_t olm::Ratchet::encrypt_output_length(
 }
 
 
-std::size_t olm::Ratchet::encrypt_random_length() {
+std::size_t olm::Ratchet::encrypt_random_length() const {
     return sender_chain.empty() ? CURVE25519_RANDOM_LENGTH : 0;
 }
 
@@ -595,7 +595,7 @@ std::size_t olm::Ratchet::decrypt(
     if (!chain) {
         /* They have started using a new ephemeral ratchet key.
          * We need to derive a new set of chain keys.
-         * We can discard our previous empheral ratchet key.
+         * We can discard our previous ephemeral ratchet key.
          * We will generate a new key when we send the next message. */
 
         chain = receiver_chains.insert();

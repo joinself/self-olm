@@ -35,6 +35,9 @@ public class OlmException extends IOException {
     public static final int EXCEPTION_CODE_ACCOUNT_REMOVE_ONE_TIME_KEYS = 105;
     public static final int EXCEPTION_CODE_ACCOUNT_MARK_ONE_KEYS_AS_PUBLISHED = 106;
     public static final int EXCEPTION_CODE_ACCOUNT_SIGN_MESSAGE = 107;
+    public static final int EXCEPTION_CODE_ACCOUNT_GENERATE_FALLBACK_KEY = 108;
+    public static final int EXCEPTION_CODE_ACCOUNT_FALLBACK_KEY = 109;
+    public static final int EXCEPTION_CODE_ACCOUNT_FORGET_FALLBACK_KEY = 110;
 
     public static final int EXCEPTION_CODE_CREATE_INBOUND_GROUP_SESSION = 200;
     public static final int EXCEPTION_CODE_INIT_INBOUND_GROUP_SESSION = 201;
@@ -57,6 +60,7 @@ public class OlmException extends IOException {
     public static final int EXCEPTION_CODE_SESSION_ENCRYPT_MESSAGE = 404;
     public static final int EXCEPTION_CODE_SESSION_DECRYPT_MESSAGE = 405;
     public static final int EXCEPTION_CODE_SESSION_SESSION_IDENTIFIER = 406;
+    public static final int EXCEPTION_CODE_SESSION_SESSION_DESCRIBE = 407;
 
     public static final int EXCEPTION_CODE_UTILITY_CREATION = 500;
     public static final int EXCEPTION_CODE_UTILITY_VERIFY_SIGNATURE = 501;

@@ -5,25 +5,21 @@ OlmLibSdk exposes an android wrapper to libolm.
 
 Installation
 ------------
-Create a libs directory in your project directory
-Copy the olm-sdk.aar into it.
 
-In your build.gradle file, add in the android section::
+Android Olm library is released on MavenCentral.
 
-    repositories {
-        flatDir {
-            dir 'libs'
-        }
-    }
+Add this dependency to your project:
 
-Add in the dependencies category::
+```groovy
+implementation "org.matrix.android:olm:3.2.8"
+```
 
-    compile(name: 'olm-sdk', ext: 'aar')
+Latest version: ![Latest version](https://img.shields.io/maven-central/v/org.matrix.android/olm)
 
 Development
 -----------
 import the project from the ``android/`` path.
 
-The project contains some JNI files and some Java wraper files.
+The project contains some JNI files and some Java wrapper files.
 
 The project contains some tests under AndroidTests package.

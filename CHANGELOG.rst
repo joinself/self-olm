@@ -1,7 +1,176 @@
-Changes in `3.1.4 <https://gitlab.matrix.org/matrix-org/olm/tags/3.1.4>`_
+Changes in `3.2.14 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.14>`_
+===========================================================================
+
+This release includes the following changes since 3.2.13:
+
+* TypeScript type improvements.
+* Improvements to Python packaging
+* Documentation improvements.
+
+Changes in `3.2.13 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.13>`_
+===========================================================================
+
+This release includes the following changes since 3.2.12:
+
+* Fix compilation with newer versions of emscripten.
+  * The npm package is compiled with emscripten 3.1.17 to fix compatibility with
+    node 18.
+* Add py.typed to Python wheels.
+* Some documentation fixes and updates.
+* Improve the pkgconfig file.
+
+Changes in `3.2.12 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.12>`_
+===========================================================================
+
+This release includes the following changes since 3.2.11:
+
+* Expose olm_sas_calculate_mac_fixed_base64 in the bindings.
+* Allow memory to grow in wasm.  Thanks to benkuly for the suggestion.
+* Fix Python type hints.
+* Some Python build fixes.
+* Initial work on a Nix flake for building and testing.
+
+Changes in `3.2.11 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.11>`_
+===========================================================================
+
+This release includes the following changes since 3.2.10:
+
+* Fix building documentation.  Thanks to Jonas Smedegaard.  The documents
+  written in Markdown are now converted to HTML using Pandoc.
+* Add methods for getting unpublished fallback key in Objective-C binding.
+* Add public pickle/unpickle methods to Java binding.
+* Add wrapper for olm_session_describe to Java binding.  Thanks to Alex Baker.
+
+Changes in `3.2.10 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.10>`_
+===========================================================================
+
+This release includes no change since 3.2.9, but is created to be able to
+publish again the Android library on MavenCentral.
+
+Changes in `3.2.9 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.9>`_
+=========================================================================
+
+This release includes the following changes since 3.2.8:
+
+* Switch C++ tests to use doctest.  Thanks to Nicolas Werner.
+* Switch JavaScript tests to use jasmine instead of deprecated jasmine-node.
+* Add session describe function to Python binding.  Thanks to Tulir Asokan.
+
+Changes in `3.2.8 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.8>`_
+=========================================================================
+
+This release includes the following changes since 3.2.7:
+
+* Improve handling of olm_session_describe when the buffer is too small.
+* Ensure random arrays are blanked in JavaScript bindings.
+
+Changes in `3.2.7 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.7>`_
+=========================================================================
+
+This release includes the following changes since 3.2.6:
+
+* Fix installation with the Makefile.
+* Fix exporting again, so we only export olm symbols.
+* Fix WASM build.  Thanks to Benjamin Kampmann.
+* Add more functions for fallback keys.
+
+Changes in `3.2.6 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.6>`_
+=========================================================================
+
+This release includes the following changes since 3.2.5:
+
+* Fix building on various platforms when using CMake.  Building from the
+  Makefile still assumes that it is using gcc.
+
+Changes in `3.2.5 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.5>`_
+=========================================================================
+
+This release includes the following changes since 3.2.4:
+
+* Add functions for getting error codes rather than error strings.  Thanks to
+  Nicolas Werner for the suggestion.
+* Only export olm symbols.  Thanks to Mohammed Sadiq for the suggestion.
+* Improve error handling in unpickle functions.
+* Add support for fallback keys to the Objective-C and Android bindings.
+
+Changes in `3.2.4 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.4>`_
+=========================================================================
+
+This release includes the following changes since 3.2.3:
+
+* Android build fixes.
+
+Changes in `3.2.3 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.3>`_
+=========================================================================
+
+This release includes the following changes since 3.2.2:
+
+* Add some checks for invalid input and ensure all fields are initialized.
+* Include LibreJS license tags.  Thanks to Johannes Marbach for the suggestion.
+* Support for Swift Package Manager.  Thanks to Johannes Marbach.
+
+Changes in `3.2.2 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.2>`_
+=========================================================================
+
+This release includes the following changes since 3.2.1:
+
+* Fixes in the TypeScript definition file.
+* CMake build fixes.  Thanks to Gorgurov Alexey.
+* Change the JavaScript package name to ``@matrix-org/olm``.  Note that
+  this means that packages will need to change their ``require`` or
+  ``import`` statements to use this new name.
+* Include file checksums in the JavaScript package.
+* Fix length calculation in fallback key json.  Thanks to Tobias Furuholm.
+* Add a new function to calculate the correct base64 encoding for SAS.
+  (Currently only available in the C API.)
+* Add the ability to specify a pickle key in the Objective-C binding.
+* Add pkg-config file on Unix-like systems.
+
+Changes in `3.2.1 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.1>`_
+=========================================================================
+
+This release includes the following changes since 3.2.0:
+
+* Fixes in the TypeScript definition file.
+
+Changes in `3.2.0 <https://gitlab.matrix.org/matrix-org/olm/tags/3.2.0>`_
+=========================================================================
+
+This release includes the following changes since 3.1.5:
+
+* Add support for fallback keys (MSC2732).
+* Allow some arguments in the JavaScript bindings to be either Uint8Array or
+  strings.
+* Fixes to the TypeScript definition file.
+* Improvements to the JavaScript group demo. Thanks to Saúl Ibarra Corretgé.
+* Ensure that the other party's public key has been set in SAS module. Thanks
+  to Saúl Ibarra Corretgé.
+* Fix building with newer versions of emscripten, and simplify makefile. Thanks
+  to Lukas Lihotzki.
+* Reduce pollution of the global namespace in the Javascript binding. Thanks to
+  Lukas Lihotzki.
+
+Changes in `3.1.5 <https://gitlab.matrix.org/matrix-org/olm/tags/3.1.5>`_
 =========================================================================
 
 This release includes the following changes since 3.1.4:
+
+* Build improvements:
+
+  * Fix CMake handling when installing in a non-standard location. Thanks to
+    Alexey Rusakov.
+  * Add support in the Makefile for creating a WASM-ready archive. Thanks to
+    stoically.
+  * Improve support for LLVM is Makefile. Thanks to caywin25 for reporting.
+
+* Add a TypeScript definition file.
+* Some documentation and example fixes.
+* Add list of bindings to the README.
+
+Changes in `3.1.4 <https://gitlab.matrix.org/matrix-org/olm/tags/3.1.4>`_
+=========================================================================
+
+This release includes the following changes since 3.1.3:
 
 * Build improvements:
   * Install headers in the system-configured include directory with CMake.

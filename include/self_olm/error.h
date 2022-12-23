@@ -15,6 +15,8 @@
 #ifndef OLM_ERROR_H_
 #define OLM_ERROR_H_
 
+#include "olm/olm_export.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,17 +55,23 @@ enum OlmErrorCode {
 
     OLM_INPUT_BUFFER_TOO_SMALL = 15,
 
-    // Not an error code, just here to pad out the enum past 16 because
-    // otherwise the compiler warns about a redunant check. If you're
-    // adding an error code, replace this one!
-    OLM_ERROR_NOT_INVENTED_YET = 16,
+    /**
+     * SAS doesn't have their key set.
+     */
+    OLM_SAS_THEIR_KEY_NOT_SET = 16,
+
+    /**
+     * The pickled object was successfully decoded, but the unpickling still failed
+     * because it had some extraneous junk data at the end.
+     */
+    OLM_PICKLE_EXTRA_DATA = 17,
 
     /* remember to update the list of string constants in error.c when updating
      * this list. */
 };
 
 /** get a string representation of the given error code. */
-const char * _olm_error_to_string(enum OlmErrorCode error);
+OLM_EXPORT const char * _olm_error_to_string(enum OlmErrorCode error);
 
 #ifdef __cplusplus
 } // extern "C"

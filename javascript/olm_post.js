@@ -2,23 +2,28 @@ var malloc = Module['_malloc'];
 var free = Module['_free'];
 var OLM_ERROR;
 
+function filled_stack(size, filler) {
+    var ptr = stackAlloc(size);
+    filler(new Uint8Array(Module['HEAPU8'].buffer, ptr, size));
+    return ptr;
+}
+
 /* allocate a number of bytes of storage on the stack.
  *
  * If size_or_array is a Number, allocates that number of zero-initialised bytes.
  */
 function stack(size_or_array) {
-    return allocate(size_or_array, 'i8', Module['ALLOC_STACK']);
+    return (typeof size_or_array == 'number')
+        ? filled_stack(size_or_array, function(x) { x.fill(0) })
+        : filled_stack(size_or_array.length, function(x) { x.set(size_or_array) });
 }
 
 function array_from_string(string) {
-    return intArrayFromString(string, true);
+    return string instanceof Uint8Array ? string : intArrayFromString(string, true);
 }
 
 function random_stack(size) {
-    var ptr = stack(size);
-    var array = new Uint8Array(Module['HEAPU8'].buffer, ptr, size);
-    get_random_values(array);
-    return ptr;
+    return filled_stack(size, get_random_values);
 }
 
 function restore_stack(wrapped) {
@@ -39,6 +44,7 @@ function bzero(ptr, n) {
     }
 }
 
+/** @constructor */
 function Account() {
     var size = Module['_olm_account_size']();
     this.buf = malloc(size);
@@ -68,9 +74,14 @@ Account.prototype['create'] = restore_stack(function() {
         Module['_olm_create_account_random_length']
     )(this.ptr);
     var random = random_stack(random_length);
-    account_method(Module['_olm_create_account'])(
-        this.ptr, random, random_length
-    );
+    try {
+        account_method(Module['_olm_create_account'])(
+            this.ptr, random, random_length
+        );
+    } finally {
+        // clear the random buffer
+        bzero(random, random_length);
+    }
 });
 
 Account.prototype['identity_keys'] = restore_stack(function() {
@@ -135,14 +146,62 @@ Account.prototype['generate_one_time_keys'] = restore_stack(function(
         Module['_olm_account_generate_one_time_keys_random_length']
     )(this.ptr, number_of_keys);
     var random = random_stack(random_length);
-    account_method(Module['_olm_account_generate_one_time_keys'])(
-        this.ptr, number_of_keys, random, random_length
-    );
+    try {
+        account_method(Module['_olm_account_generate_one_time_keys'])(
+            this.ptr, number_of_keys, random, random_length
+        );
+    } finally {
+        // clear the random buffer
+        bzero(random, random_length);
+    }
 });
 
 Account.prototype['remove_one_time_keys'] = restore_stack(function(session) {
-     account_method(Module['_olm_remove_one_time_keys'])(
+    account_method(Module['_olm_remove_one_time_keys'])(
         this.ptr, session.ptr
+    );
+});
+
+Account.prototype['generate_fallback_key'] = restore_stack(function() {
+    var random_length = account_method(
+        Module['_olm_account_generate_fallback_key_random_length']
+    )(this.ptr);
+    var random = random_stack(random_length);
+    try {
+        account_method(Module['_olm_account_generate_fallback_key'])(
+            this.ptr, random, random_length
+        );
+    } finally {
+        // clear the random buffer
+        bzero(random, random_length);
+    }
+});
+
+Account.prototype['fallback_key'] = restore_stack(function() {
+    var keys_length = account_method(
+        Module['_olm_account_fallback_key_length']
+    )(this.ptr);
+    var keys = stack(keys_length + NULL_BYTE_PADDING_LENGTH);
+    account_method(Module['_olm_account_fallback_key'])(
+        this.ptr, keys, keys_length
+    );
+    return UTF8ToString(keys, keys_length);
+});
+
+Account.prototype['unpublished_fallback_key'] = restore_stack(function() {
+    var keys_length = account_method(
+        Module['_olm_account_unpublished_fallback_key_length']
+    )(this.ptr);
+    var keys = stack(keys_length + NULL_BYTE_PADDING_LENGTH);
+    account_method(Module['_olm_account_unpublished_fallback_key'])(
+        this.ptr, keys, keys_length
+    );
+    return UTF8ToString(keys, keys_length);
+});
+
+Account.prototype['forget_old_fallback_key'] = restore_stack(function() {
+    account_method(Module['_olm_account_forget_old_fallback_key'])(
+        this.ptr
     );
 });
 
@@ -186,6 +245,7 @@ Account.prototype['unpickle'] = restore_stack(function(key, pickle) {
     }
 });
 
+/** @constructor */
 function Session() {
     var size = Module['_olm_session_size']();
     this.buf = malloc(size);
@@ -472,6 +532,7 @@ Session.prototype['describe'] = restore_stack(function() {
     }
 });
 
+/** @constructor */
 function Utility() {
     var size = Module['_olm_utility_size']();
     this.buf = malloc(size);

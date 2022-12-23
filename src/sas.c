@@ -23,12 +23,19 @@ struct OlmSAS {
     enum OlmErrorCode last_error;
     struct _olm_curve25519_key_pair curve25519_key;
     uint8_t secret[CURVE25519_SHARED_SECRET_LENGTH];
+    int their_key_set;
 };
 
 const char * olm_sas_last_error(
-    OlmSAS * sas
+    const OlmSAS * sas
 ) {
     return _olm_error_to_string(sas->last_error);
+}
+
+enum OlmErrorCode olm_sas_last_error_code(
+    const OlmSAS * sas
+) {
+    return sas->last_error;
 }
 
 size_t olm_sas_size(void) {
@@ -49,7 +56,7 @@ size_t olm_clear_sas(
     return sizeof(OlmSAS);
 }
 
-size_t olm_create_sas_random_length(OlmSAS * sas) {
+size_t olm_create_sas_random_length(const OlmSAS * sas) {
     return CURVE25519_KEY_LENGTH;
 }
 
@@ -62,10 +69,11 @@ size_t olm_create_sas(
         return (size_t)-1;
     }
     _olm_crypto_curve25519_generate_key((uint8_t *) random, &sas->curve25519_key);
+    sas->their_key_set = 0;
     return 0;
 }
 
-size_t olm_sas_pubkey_length(OlmSAS * sas) {
+size_t olm_sas_pubkey_length(const OlmSAS * sas) {
     return _olm_encode_base64_length(CURVE25519_KEY_LENGTH);
 }
 
@@ -93,9 +101,22 @@ size_t olm_sas_set_their_key(
         sas->last_error = OLM_INPUT_BUFFER_TOO_SMALL;
         return (size_t)-1;
     }
-    _olm_decode_base64(their_key, their_key_length, their_key);
+
+    size_t ret = _olm_decode_base64(their_key, their_key_length, their_key);
+    if (ret == (size_t)-1) {
+        sas->last_error = OLM_INVALID_BASE64;
+        return (size_t)-1;
+    }
+
     _olm_crypto_curve25519_shared_secret(&sas->curve25519_key, their_key, sas->secret);
+    sas->their_key_set = 1;
     return 0;
+}
+
+int olm_sas_is_their_key_set(
+    const OlmSAS *sas
+) {
+    return sas->their_key_set;
 }
 
 size_t olm_sas_generate_bytes(
@@ -103,6 +124,10 @@ size_t olm_sas_generate_bytes(
     const void * info, size_t info_length,
     void * output, size_t output_length
 ) {
+    if (!sas->their_key_set) {
+        sas->last_error = OLM_SAS_THEIR_KEY_NOT_SET;
+        return (size_t)-1;
+    }
     _olm_crypto_hkdf_sha256(
         sas->secret, sizeof(sas->secret),
         NULL, 0,
@@ -113,10 +138,42 @@ size_t olm_sas_generate_bytes(
 }
 
 size_t olm_sas_mac_length(
-    OlmSAS *sas
+    const OlmSAS *sas
 ) {
     return _olm_encode_base64_length(SHA256_OUTPUT_LENGTH);
 }
+
+// A version of the calculate mac function that produces base64 strings that are
+// compatible with other base64 implementations.
+size_t olm_sas_calculate_mac_fixed_base64(
+    OlmSAS * sas,
+    const void * input, size_t input_length,
+    const void * info, size_t info_length,
+    void * mac, size_t mac_length
+) {
+    if (mac_length < olm_sas_mac_length(sas)) {
+        sas->last_error = OLM_OUTPUT_BUFFER_TOO_SMALL;
+        return (size_t)-1;
+    }
+    if (!sas->their_key_set) {
+        sas->last_error = OLM_SAS_THEIR_KEY_NOT_SET;
+        return (size_t)-1;
+    }
+    uint8_t key[32];
+    _olm_crypto_hkdf_sha256(
+        sas->secret, sizeof(sas->secret),
+        NULL, 0,
+        (const uint8_t *) info, info_length,
+        key, 32
+    );
+
+    uint8_t temp_mac[32];
+    _olm_crypto_hmac_sha256(key, 32, input, input_length, temp_mac);
+    _olm_encode_base64((const uint8_t *)temp_mac, SHA256_OUTPUT_LENGTH, (uint8_t *)mac);
+
+    return 0;
+}
+
 
 size_t olm_sas_calculate_mac(
     OlmSAS * sas,
@@ -126,6 +183,10 @@ size_t olm_sas_calculate_mac(
 ) {
     if (mac_length < olm_sas_mac_length(sas)) {
         sas->last_error = OLM_OUTPUT_BUFFER_TOO_SMALL;
+        return (size_t)-1;
+    }
+    if (!sas->their_key_set) {
+        sas->last_error = OLM_SAS_THEIR_KEY_NOT_SET;
         return (size_t)-1;
     }
     uint8_t key[32];
@@ -149,6 +210,10 @@ size_t olm_sas_calculate_mac_long_kdf(
 ) {
     if (mac_length < olm_sas_mac_length(sas)) {
         sas->last_error = OLM_OUTPUT_BUFFER_TOO_SMALL;
+        return (size_t)-1;
+    }
+    if (!sas->their_key_set) {
+        sas->last_error = OLM_SAS_THEIR_KEY_NOT_SET;
         return (size_t)-1;
     }
     uint8_t key[256];

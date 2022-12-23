@@ -19,8 +19,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "self_olm/error.h"
 #include "self_olm/inbound_group_session.h"
 #include "self_olm/outbound_group_session.h"
+#include "self_olm/olm_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,79 +38,94 @@ typedef struct OlmUtility OlmUtility;
 /** Get the version number of the library.
  * Arguments will be updated if non-null.
  */
-void olm_get_library_version(uint8_t *major, uint8_t *minor, uint8_t *patch);
+OLM_EXPORT void olm_get_library_version(uint8_t *major, uint8_t *minor, uint8_t *patch);
 
 /** The size of an account object in bytes */
-size_t olm_account_size(void);
+OLM_EXPORT size_t olm_account_size(void);
 
 /** The size of a session object in bytes */
-size_t olm_session_size(void);
+OLM_EXPORT size_t olm_session_size(void);
 
 /** The size of a utility object in bytes */
-size_t olm_utility_size(void);
+OLM_EXPORT size_t olm_utility_size(void);
 
 /** Initialise an account object using the supplied memory
  *  The supplied memory must be at least olm_account_size() bytes */
-OlmAccount * olm_account(
+OLM_EXPORT OlmAccount * olm_account(
     void * memory
 );
 
 /** Initialise a session object using the supplied memory
  *  The supplied memory must be at least olm_session_size() bytes */
-OlmSession * olm_session(
+OLM_EXPORT OlmSession * olm_session(
     void * memory
 );
 
 /** Initialise a utility object using the supplied memory
  *  The supplied memory must be at least olm_utility_size() bytes */
-OlmUtility * olm_utility(
+OLM_EXPORT OlmUtility * olm_utility(
     void * memory
 );
 
 /** The value that olm will return from a function if there was an error */
-size_t olm_error(void);
+OLM_EXPORT size_t olm_error(void);
 
 /** A null terminated string describing the most recent error to happen to an
  * account */
-const char * olm_account_last_error(
-    OlmAccount * account
+OLM_EXPORT const char * olm_account_last_error(
+    OlmAccount const * account
+);
+
+/** An error code describing the most recent error to happen to an account */
+OLM_EXPORT enum OlmErrorCode olm_account_last_error_code(
+    OlmAccount const * account
 );
 
 /** A null terminated string describing the most recent error to happen to a
  * session */
-const char * olm_session_last_error(
-    OlmSession * session
+OLM_EXPORT const char * olm_session_last_error(
+    OlmSession const * session
+);
+
+/** An error code describing the most recent error to happen to a session */
+OLM_EXPORT enum OlmErrorCode olm_session_last_error_code(
+    OlmSession const * session
 );
 
 /** A null terminated string describing the most recent error to happen to a
  * utility */
-const char * olm_utility_last_error(
-    OlmUtility * utility
+OLM_EXPORT const char * olm_utility_last_error(
+    OlmUtility const * utility
+);
+
+/** An error code describing the most recent error to happen to a utility */
+OLM_EXPORT enum OlmErrorCode olm_utility_last_error_code(
+    OlmUtility const * utility
 );
 
 /** Clears the memory used to back this account */
-size_t olm_clear_account(
+OLM_EXPORT size_t olm_clear_account(
     OlmAccount * account
 );
 
 /** Clears the memory used to back this session */
-size_t olm_clear_session(
+OLM_EXPORT size_t olm_clear_session(
     OlmSession * session
 );
 
 /** Clears the memory used to back this utility */
-size_t olm_clear_utility(
+OLM_EXPORT size_t olm_clear_utility(
     OlmUtility * utility
 );
 
 /** Returns the number of bytes needed to store an account */
-size_t olm_pickle_account_length(
-    OlmAccount * account
+OLM_EXPORT size_t olm_pickle_account_length(
+    OlmAccount const * account
 );
 
 /** Returns the number of bytes needed to store a session */
-size_t olm_pickle_session_length(
-    OlmSession * session
+OLM_EXPORT size_t olm_pickle_session_length(
+    OlmSession const * session
 );
 
 /** Stores an account as a base64 string. Encrypts the account using the
@@ -116,7 +133,7 @@ size_t olm_pickle_session_length(
  * Returns olm_error() on failure. If the pickle output buffer
  * is smaller than olm_pickle_account_length() then
  * olm_account_last_error() will be "OUTPUT_BUFFER_TOO_SMALL" */
-size_t olm_pickle_account(
+OLM_EXPORT size_t olm_pickle_account(
     OlmAccount * account,
     void const * key, size_t key_length,
     void * pickled, size_t pickled_length
@@ -127,7 +144,7 @@ size_t olm_pickle_account(
  * Returns olm_error() on failure. If the pickle output buffer
  * is smaller than olm_pickle_session_length() then
  * olm_session_last_error() will be "OUTPUT_BUFFER_TOO_SMALL" */
-size_t olm_pickle_session(
+OLM_EXPORT size_t olm_pickle_session(
     OlmSession * session,
     void const * key, size_t key_length,
     void * pickled, size_t pickled_length
@@ -139,7 +156,7 @@ size_t olm_pickle_session(
  * will be "BAD_ACCOUNT_KEY". If the base64 couldn't be decoded then
  * olm_account_last_error() will be "INVALID_BASE64". The input pickled
  * buffer is destroyed */
-size_t olm_unpickle_account(
+OLM_EXPORT size_t olm_unpickle_account(
     OlmAccount * account,
     void const * key, size_t key_length,
     void * pickled, size_t pickled_length
@@ -151,21 +168,21 @@ size_t olm_unpickle_account(
  * will be "BAD_ACCOUNT_KEY". If the base64 couldn't be decoded then
  * olm_session_last_error() will be "INVALID_BASE64". The input pickled
  * buffer is destroyed */
-size_t olm_unpickle_session(
+OLM_EXPORT size_t olm_unpickle_session(
     OlmSession * session,
     void const * key, size_t key_length,
     void * pickled, size_t pickled_length
 );
 
 /** The number of random bytes needed to create an account.*/
-size_t olm_create_account_random_length(
-    OlmAccount * account
+OLM_EXPORT size_t olm_create_account_random_length(
+    OlmAccount const * account
 );
 
 /** Creates a new account. Returns olm_error() on failure. If there weren't
  * enough random bytes then olm_account_last_error() will be
  * "NOT_ENOUGH_RANDOM" */
-size_t olm_create_account(
+OLM_EXPORT size_t olm_create_account(
     OlmAccount * account,
     void * random, size_t random_length
 );
@@ -177,37 +194,37 @@ size_t olm_create_account_derrived_keys(
 );
 
 /** The size of the output buffer needed to hold the identity keys */
-size_t olm_account_identity_keys_length(
-    OlmAccount * account
+OLM_EXPORT size_t olm_account_identity_keys_length(
+    OlmAccount const * account
 );
 
 /** Writes the public parts of the identity keys for the account into the
  * identity_keys output buffer. Returns olm_error() on failure. If the
  * identity_keys buffer was too small then olm_account_last_error() will be
  * "OUTPUT_BUFFER_TOO_SMALL". */
-size_t olm_account_identity_keys(
+OLM_EXPORT size_t olm_account_identity_keys(
     OlmAccount * account,
     void * identity_keys, size_t identity_key_length
 );
 
 
 /** The length of an ed25519 signature encoded as base64. */
-size_t olm_account_signature_length(
-    OlmAccount * account
+OLM_EXPORT size_t olm_account_signature_length(
+    OlmAccount const * account
 );
 
 /** Signs a message with the ed25519 key for this account. Returns olm_error()
  * on failure. If the signature buffer was too small then
  * olm_account_last_error() will be "OUTPUT_BUFFER_TOO_SMALL" */
-size_t olm_account_sign(
+OLM_EXPORT size_t olm_account_sign(
     OlmAccount * account,
     void const * message, size_t message_length,
     void * signature, size_t signature_length
 );
 
 /** The size of the output buffer needed to hold the one time keys */
-size_t olm_account_one_time_keys_length(
-    OlmAccount * account
+OLM_EXPORT size_t olm_account_one_time_keys_length(
+    OlmAccount const * account
 );
 
 /** Writes the public parts of the unpublished one time keys for the account
@@ -228,25 +245,31 @@ size_t olm_account_one_time_keys_length(
  * <p>
  * If the one_time_keys buffer was too small then olm_account_last_error()
  * will be "OUTPUT_BUFFER_TOO_SMALL". */
-size_t olm_account_one_time_keys(
+OLM_EXPORT size_t olm_account_one_time_keys(
     OlmAccount * account,
     void * one_time_keys, size_t one_time_keys_length
 );
 
-/** Marks the current set of one time keys as being published. */
-size_t olm_account_mark_keys_as_published(
+/** Marks the current set of one time keys and fallback key as being published
+ * Once marked as published, the one time keys will no longer be returned by
+ * olm_account_one_time_keys(), and the fallback key will no longer be returned
+ * by olm_account_unpublished_fallback_key().
+ *
+ * Returns the number of one-time keys that were marked as published.  Note that
+ * this count does not include the fallback key. */
+OLM_EXPORT size_t olm_account_mark_keys_as_published(
     OlmAccount * account
 );
 
 /** The largest number of one time keys this account can store. */
-size_t olm_account_max_number_of_one_time_keys(
-    OlmAccount * account
+OLM_EXPORT size_t olm_account_max_number_of_one_time_keys(
+    OlmAccount const * account
 );
 
 /** The number of random bytes needed to generate a given number of new one
  * time keys. */
-size_t olm_account_generate_one_time_keys_random_length(
-    OlmAccount * account,
+OLM_EXPORT size_t olm_account_generate_one_time_keys_random_length(
+    OlmAccount const * account,
     size_t number_of_keys
 );
 
@@ -254,15 +277,63 @@ size_t olm_account_generate_one_time_keys_random_length(
  * by this account exceeds max_number_of_one_time_keys() then the old keys are
  * discarded. Returns olm_error() on error. If the number of random bytes is
  * too small then olm_account_last_error() will be "NOT_ENOUGH_RANDOM". */
-size_t olm_account_generate_one_time_keys(
+OLM_EXPORT size_t olm_account_generate_one_time_keys(
     OlmAccount * account,
     size_t number_of_keys,
     void * random, size_t random_length
 );
 
+/** The number of random bytes needed to generate a fallback key. */
+OLM_EXPORT size_t olm_account_generate_fallback_key_random_length(
+    OlmAccount const * account
+);
+
+/** Generates a new fallback key. Only one previous fallback key is
+ * stored. Returns olm_error() on error. If the number of random bytes is too
+ * small then olm_account_last_error() will be "NOT_ENOUGH_RANDOM". */
+OLM_EXPORT size_t olm_account_generate_fallback_key(
+    OlmAccount * account,
+    void * random, size_t random_length
+);
+
+/** The number of bytes needed to hold the fallback key as returned by
+ * olm_account_fallback_key. */
+OLM_EXPORT size_t olm_account_fallback_key_length(
+    OlmAccount const * account
+);
+
+/** Deprecated: use olm_account_unpublished_fallback_key instead */
+OLM_EXPORT size_t olm_account_fallback_key(
+    OlmAccount * account,
+    void * fallback_key, size_t fallback_key_size
+);
+
+/** The number of bytes needed to hold the unpublished fallback key as returned
+ * by olm_account_unpublished fallback_key. */
+OLM_EXPORT size_t olm_account_unpublished_fallback_key_length(
+    OlmAccount const * account
+);
+
+/** Returns the fallback key (if present, and if unpublished) into the
+ * fallback_key buffer */
+OLM_EXPORT size_t olm_account_unpublished_fallback_key(
+    OlmAccount * account,
+    void * fallback_key, size_t fallback_key_size
+);
+
+/** Forget about the old fallback key.  This should be called once you are
+ * reasonably certain that you will not receive any more messages that use
+ * the old fallback key (e.g. 5 minutes after the new fallback key has been
+ * published).
+ */
+OLM_EXPORT void olm_account_forget_old_fallback_key(
+    OlmAccount * account
+);
+
+
 /** The number of random bytes needed to create an outbound session */
-size_t olm_create_outbound_session_random_length(
-    OlmSession * session
+OLM_EXPORT size_t olm_create_outbound_session_random_length(
+    OlmSession const * session
 );
 
 /** Creates a new out-bound session for sending messages to a given identity_key
@@ -270,9 +341,9 @@ size_t olm_create_outbound_session_random_length(
  * decoded as base64 then olm_session_last_error() will be "INVALID_BASE64"
  * If there weren't enough random bytes then olm_session_last_error() will
  * be "NOT_ENOUGH_RANDOM". */
-size_t olm_create_outbound_session(
+OLM_EXPORT size_t olm_create_outbound_session(
     OlmSession * session,
-    OlmAccount * account,
+    OlmAccount const * account,
     void const * their_identity_key, size_t their_identity_key_length,
     void const * their_one_time_key, size_t their_one_time_key_length,
     void * random, size_t random_length
@@ -283,24 +354,19 @@ size_t olm_create_outbound_session(
  * couldn't be decoded then olm_session_last_error will be "INVALID_BASE64".
  * If the message was for an unsupported protocol version then
  * olm_session_last_error() will be "BAD_MESSAGE_VERSION". If the message
- * couldn't be decoded then then olm_session_last_error() will be
+ * couldn't be decoded then olm_session_last_error() will be
  * "BAD_MESSAGE_FORMAT". If the message refers to an unknown one time
  * key then olm_session_last_error() will be "BAD_MESSAGE_KEY_ID". */
-size_t olm_create_inbound_session(
+OLM_EXPORT size_t olm_create_inbound_session(
     OlmSession * session,
     OlmAccount * account,
     void * one_time_key_message, size_t message_length
 );
 
-/** Create a new in-bound session for sending/receiving messages from an
- * incoming PRE_KEY message. Returns olm_error() on failure. If the base64
- * couldn't be decoded then olm_session_last_error will be "INVALID_BASE64".
- * If the message was for an unsupported protocol version then
- * olm_session_last_error() will be "BAD_MESSAGE_VERSION". If the message
- * couldn't be decoded then then olm_session_last_error() will be
- * "BAD_MESSAGE_FORMAT". If the message refers to an unknown one time
- * key then olm_session_last_error() will be "BAD_MESSAGE_KEY_ID". */
-size_t olm_create_inbound_session_from(
+/** Same as olm_create_inbound_session, but ensures that the identity key
+ * in the pre-key message matches the expected identity key, supplied via the
+ * `their_identity_key` parameter. Fails early if there is no match. */
+OLM_EXPORT size_t olm_create_inbound_session_from(
     OlmSession * session,
     OlmAccount * account,
     void const * their_identity_key, size_t their_identity_key_length,
@@ -308,27 +374,30 @@ size_t olm_create_inbound_session_from(
 );
 
 /** The length of the buffer needed to return the id for this session. */
-size_t olm_session_id_length(
-    OlmSession * session
+OLM_EXPORT size_t olm_session_id_length(
+    OlmSession const * session
 );
 
 /** An identifier for this session. Will be the same for both ends of the
  * conversation. If the id buffer is too small then olm_session_last_error()
  * will be "OUTPUT_BUFFER_TOO_SMALL". */
-size_t olm_session_id(
+OLM_EXPORT size_t olm_session_id(
     OlmSession * session,
     void * id, size_t id_length
 );
 
-int olm_session_has_received_message(
-    OlmSession *session
+OLM_EXPORT int olm_session_has_received_message(
+    OlmSession const *session
 );
 
 /**
  * Write a null-terminated string describing the internal state of an olm
- * session to the buffer provided for debugging and logging purposes.
+ * session to the buffer provided for debugging and logging purposes. If the
+ * buffer is not large enough to hold the entire string, it will be truncated
+ * and will end with "...".  A buffer length of 600 will be enough to hold any
+ * output.
  */
-void olm_session_describe(OlmSession * session, char *buf, size_t buflen);
+OLM_EXPORT void olm_session_describe(OlmSession * session, char *buf, size_t buflen);
 
 /** Checks if the PRE_KEY message is for this in-bound session. This can happen
  * if multiple messages are sent to this account before this account sends a
@@ -339,7 +408,7 @@ void olm_session_describe(OlmSession * session, char *buf, size_t buflen);
  * unsupported protocol version then olm_session_last_error() will be
  * "BAD_MESSAGE_VERSION". If the message couldn't be decoded then then
  * olm_session_last_error() will be "BAD_MESSAGE_FORMAT". */
-size_t olm_matches_inbound_session(
+OLM_EXPORT size_t olm_matches_inbound_session(
     OlmSession * session,
     void * one_time_key_message, size_t message_length
 );
@@ -353,7 +422,7 @@ size_t olm_matches_inbound_session(
  * unsupported protocol version then olm_session_last_error() will be
  * "BAD_MESSAGE_VERSION". If the message couldn't be decoded then then
  * olm_session_last_error() will be "BAD_MESSAGE_FORMAT". */
-size_t olm_matches_inbound_session_from(
+OLM_EXPORT size_t olm_matches_inbound_session_from(
     OlmSession * session,
     void const * their_identity_key, size_t their_identity_key_length,
     void * one_time_key_message, size_t message_length
@@ -362,7 +431,7 @@ size_t olm_matches_inbound_session_from(
 /** Removes the one time keys that the session used from the account. Returns
  * olm_error() on failure. If the account doesn't have any matching one time
  * keys then olm_account_last_error() will be "BAD_MESSAGE_KEY_ID". */
-size_t olm_remove_one_time_keys(
+OLM_EXPORT size_t olm_remove_one_time_keys(
     OlmAccount * account,
     OlmSession * session
 );
@@ -371,19 +440,19 @@ size_t olm_remove_one_time_keys(
  * OLM_MESSAGE_TYPE_PRE_KEY if the message will be a PRE_KEY message.
  * Returns OLM_MESSAGE_TYPE_MESSAGE if the message will be a normal message.
  * Returns olm_error on failure. */
-size_t olm_encrypt_message_type(
-    OlmSession * session
+OLM_EXPORT size_t olm_encrypt_message_type(
+    OlmSession const * session
 );
 
 /** The number of random bytes needed to encrypt the next message. */
-size_t olm_encrypt_random_length(
-    OlmSession * session
+OLM_EXPORT size_t olm_encrypt_random_length(
+    OlmSession const * session
 );
 
 /** The size of the next message in bytes for the given number of plain-text
  * bytes. */
-size_t olm_encrypt_message_length(
-    OlmSession * session,
+OLM_EXPORT size_t olm_encrypt_message_length(
+    OlmSession const * session,
     size_t plaintext_length
 );
 
@@ -393,7 +462,7 @@ size_t olm_encrypt_message_length(
  * olm_session_last_error() will be "OUTPUT_BUFFER_TOO_SMALL". If there
  * weren't enough random bytes then olm_session_last_error() will be
  * "NOT_ENOUGH_RANDOM". */
-size_t olm_encrypt(
+OLM_EXPORT size_t olm_encrypt(
     OlmSession * session,
     void const * plaintext, size_t plaintext_length,
     void * random, size_t random_length,
@@ -408,7 +477,7 @@ size_t olm_encrypt(
  * protocol then olm_session_last_error() will be "BAD_MESSAGE_VERSION".
  * If the message couldn't be decoded then olm_session_last_error() will be
  * "BAD_MESSAGE_FORMAT". */
-size_t olm_decrypt_max_plaintext_length(
+OLM_EXPORT size_t olm_decrypt_max_plaintext_length(
     OlmSession * session,
     size_t message_type,
     void * message, size_t message_length
@@ -425,7 +494,7 @@ size_t olm_decrypt_max_plaintext_length(
  * olm_session_last_error() will be BAD_MESSAGE_FORMAT".
  * If the MAC on the message was invalid then olm_session_last_error() will
  * be "BAD_MESSAGE_MAC". */
-size_t olm_decrypt(
+OLM_EXPORT size_t olm_decrypt(
     OlmSession * session,
     size_t message_type,
     void * message, size_t message_length,
@@ -433,14 +502,14 @@ size_t olm_decrypt(
 );
 
 /** The length of the buffer needed to hold the SHA-256 hash. */
-size_t olm_sha256_length(
-   OlmUtility * utility
+OLM_EXPORT size_t olm_sha256_length(
+   OlmUtility const * utility
 );
 
 /** Calculates the SHA-256 hash of the input and encodes it as base64. If the
  * output buffer is smaller than olm_sha256_length() then
  * olm_utility_last_error() will be "OUTPUT_BUFFER_TOO_SMALL". */
-size_t olm_sha256(
+OLM_EXPORT size_t olm_sha256(
     OlmUtility * utility,
     void const * input, size_t input_length,
     void * output, size_t output_length
@@ -449,7 +518,7 @@ size_t olm_sha256(
 /** Verify an ed25519 signature. If the key was too small then
  * olm_utility_last_error() will be "INVALID_BASE64". If the signature was invalid
  * then olm_utility_last_error() will be "BAD_MESSAGE_MAC". */
-size_t olm_ed25519_verify(
+OLM_EXPORT size_t olm_ed25519_verify(
     OlmUtility * utility,
     void const * key, size_t key_length,
     void const * message, size_t message_length,

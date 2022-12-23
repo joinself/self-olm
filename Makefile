@@ -4,14 +4,13 @@ include common.mk
 VERSION := $(MAJOR).$(MINOR).$(PATCH)
 PREFIX ?= /usr/local
 BUILD_DIR := build
-RELEASE_OPTIMIZE_FLAGS ?= -g -O3
-DEBUG_OPTIMIZE_FLAGS ?= -g -O0
+RELEASE_OPTIMIZE_FLAGS ?= -O3
+DEBUG_OPTIMIZE_FLAGS ?= -g -O0 -U_FORTIFY_SOURCE
 JS_OPTIMIZE_FLAGS ?= -O3
-FUZZING_OPTIMIZE_FLAGS ?= -O3
+FUZZER_OPTIMIZE_FLAGS ?= -O3
 CC = gcc
 EMCC = emcc
-AFL_CC = afl-gcc
-AFL_CXX = afl-g++
+EMAR = emar
 AR = ar
 
 UNAME := $(shell uname)
@@ -29,29 +28,36 @@ STATIC_RELEASE_TARGET := $(BUILD_DIR)/libself_olm.a
 DEBUG_TARGET := $(BUILD_DIR)/libself_olm_debug.$(SO).$(VERSION)
 JS_WASM_TARGET := javascript/olm.js
 JS_ASMJS_TARGET := javascript/olm_legacy.js
+WASM_TARGET := $(BUILD_DIR)/wasm/libolm.a
 
 JS_EXPORTED_FUNCTIONS := javascript/exported_functions.json
-JS_EXTRA_EXPORTED_RUNTIME_METHODS := ALLOC_STACK
+JS_EXPORTED_RUNTIME_METHODS := [ALLOC_STACK,writeAsciiToMemory,intArrayFromString]
 JS_EXTERNS := javascript/externs.js
 
-PUBLIC_HEADERS := include/self_olm/olm.h include/self_olm/outbound_group_session.h include/self_olm/inbound_group_session.h include/self_olm/pk.h include/self_olm/sas.h
+PUBLIC_HEADERS := include/self_olm/olm.h include/self_olm/outbound_group_session.h include/self_olm/inbound_group_session.h include/self_olm/pk.h include/self_olm/sas.h include/self_olm/error.h include/self_olm/olm_export.h
 
 SOURCES := $(wildcard src/*.cpp) $(wildcard src/*.c) \
     lib/crypto-algorithms/sha256.c \
     lib/crypto-algorithms/aes.c \
     lib/curve25519-donna/curve25519-donna.c
 
-FUZZER_SOURCES := $(wildcard fuzzers/fuzz_*.cpp) $(wildcard fuzzers/fuzz_*.c)
+FUZZER_SOURCES := $(wildcard fuzzing/fuzzers/fuzz_*.cpp) $(wildcard fuzzing/fuzzers/fuzz_*.c)
 TEST_SOURCES := $(wildcard tests/test_*.cpp) $(wildcard tests/test_*.c)
 
 OBJECTS := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCES)))
 RELEASE_OBJECTS := $(addprefix $(BUILD_DIR)/release/,$(OBJECTS))
 DEBUG_OBJECTS := $(addprefix $(BUILD_DIR)/debug/,$(OBJECTS))
 FUZZER_OBJECTS := $(addprefix $(BUILD_DIR)/fuzzers/objects/,$(OBJECTS))
-FUZZER_BINARIES := $(addprefix $(BUILD_DIR)/,$(basename $(FUZZER_SOURCES)))
+FUZZER_ASAN_OBJECTS := $(addprefix $(BUILD_DIR)/fuzzers/objects/,$(addprefix asan_,$(OBJECTS)))
+FUZZER_MSAN_OBJECTS := $(addprefix $(BUILD_DIR)/fuzzers/objects/,$(addprefix msan_,$(OBJECTS)))
+FUZZER_DEBUG_OBJECTS := $(addprefix $(BUILD_DIR)/fuzzers/objects/,$(addprefix debug_,$(OBJECTS)))
+FUZZER_BINARIES := $(addprefix $(BUILD_DIR)/fuzzers/,$(basename $(notdir $(FUZZER_SOURCES))))
+FUZZER_ASAN_BINARIES := $(addsuffix _asan,$(FUZZER_BINARIES))
+FUZZER_MSAN_BINARIES := $(addsuffix _msan,$(FUZZER_BINARIES))
 FUZZER_DEBUG_BINARIES := $(patsubst $(BUILD_DIR)/fuzzers/fuzz_%,$(BUILD_DIR)/fuzzers/debug_%,$(FUZZER_BINARIES))
 TEST_BINARIES := $(patsubst tests/%,$(BUILD_DIR)/tests/%,$(basename $(TEST_SOURCES)))
 JS_OBJECTS := $(addprefix $(BUILD_DIR)/javascript/,$(OBJECTS))
+WASM_OBJECTS := $(addprefix $(BUILD_DIR)/wasm/,$(OBJECTS))
 
 # pre & post are the js-pre/js-post options to emcc.
 # They are injected inside the modularised code and
@@ -98,18 +104,29 @@ EMCCFLAGS = --closure 1 --memory-init-file 0 -s NO_FILESYSTEM=1 -s INVOKE_RUN=0 
 # (This can't be changed by the app with wasm since it's baked into the wasm).
 # (emscripten also mandates at least 16MB of memory for asm.js now, so
 # we don't use this for the legacy build.)
-EMCCFLAGS_WASM += -s TOTAL_STACK=65536 -s TOTAL_MEMORY=262144
+EMCCFLAGS_WASM += -s TOTAL_STACK=65536 -s TOTAL_MEMORY=262144 -s ALLOW_MEMORY_GROWTH
 
-EMCCFLAGS_ASMJS += -s WASM=0
+EMCCFLAGS_ASMJS += -s WASM=0 -Wno-error=closure
 
-EMCC.c = $(EMCC) $(CFLAGS) $(CPPFLAGS) -c
-EMCC.cc = $(EMCC) $(CXXFLAGS) $(CPPFLAGS) -c
+EMCC.c = $(EMCC) $(CFLAGS) $(CPPFLAGS) -c -DNDEBUG -DOLM_STATIC_DEFINE=1
+EMCC.cc = $(EMCC) $(CXXFLAGS) $(CPPFLAGS) -c -DNDEBUG -DOLM_STATIC_DEFINE=1
 EMCC_LINK = $(EMCC) $(LDFLAGS) $(EMCCFLAGS)
+
+AFL_CC = afl-clang-fast
+AFL_CXX = afl-clang-fast++
 
 AFL.c = $(AFL_CC) $(CFLAGS) $(CPPFLAGS) -c
 AFL.cc = $(AFL_CXX) $(CXXFLAGS) $(CPPFLAGS) -c
 AFL_LINK.c = $(AFL_CC) $(LDFLAGS) $(CFLAGS) $(CPPFLAGS)
 AFL_LINK.cc = $(AFL_CXX) $(LDFLAGS) $(CXXFLAGS) $(CPPFLAGS)
+AFL_ASAN.c = AFL_USE_ASAN=1 $(AFL_CC) -m32 $(CFLAGS) $(CPPFLAGS) -c
+AFL_ASAN.cc = AFL_USE_ASAN=1 $(AFL_CXX) -m32 $(CXXFLAGS) $(CPPFLAGS) -c
+AFL_LINK_ASAN.c = AFL_USE_ASAN=1 $(AFL_CC) -m32 $(LDFLAGS) $(CFLAGS) $(CPPFLAGS)
+AFL_LINK_ASAN.cc = AFL_USE_ASAN=1 $(AFL_CXX) -m32 $(LDFLAGS) $(CXXFLAGS) $(CPPFLAGS)
+AFL_MSAN.c = AFL_USE_MSAN=1 $(AFL_CC) $(CFLAGS) $(CPPFLAGS) -c
+AFL_MSAN.cc = AFL_USE_MSAN=1 $(AFL_CXX) $(CXXFLAGS) $(CPPFLAGS) -c
+AFL_LINK_MSAN.c = AFL_USE_MSAN=1 $(AFL_CC) $(LDFLAGS) $(CFLAGS) $(CPPFLAGS)
+AFL_LINK_MSAN.cc = AFL_USE_MSAN=1 $(AFL_CXX) $(LDFLAGS) $(CXXFLAGS) $(CPPFLAGS)
 
 # generate .d files when compiling
 CPPFLAGS += -MMD
@@ -127,12 +144,23 @@ $(DEBUG_TARGET): LDFLAGS += $(DEBUG_OPTIMIZE_FLAGS)
 $(TEST_BINARIES): CPPFLAGS += -Itests/include
 $(TEST_BINARIES): LDFLAGS += $(DEBUG_OPTIMIZE_FLAGS) -L$(BUILD_DIR)
 
-$(FUZZER_OBJECTS): CFLAGS += $(FUZZER_OPTIMIZE_FLAGS)
-$(FUZZER_OBJECTS): CXXFLAGS += $(FUZZER_OPTIMIZE_FLAGS)
-$(FUZZER_BINARIES): CPPFLAGS += -Ifuzzers/include
-$(FUZZER_BINARIES): LDFLAGS += $(FUZZER_OPTIMIZE_FLAGS) -L$(BUILD_DIR)
-$(FUZZER_DEBUG_BINARIES): CPPFLAGS += -Ifuzzers/include
-$(FUZZER_DEBUG_BINARIES): LDFLAGS += $(DEBUG_OPTIMIZE_FLAGS)
+$(FUZZER_OBJECTS): CFLAGS += $(FUZZER_OPTIMIZE_FLAGS) -D OLM_FUZZING=1
+$(FUZZER_OBJECTS): CXXFLAGS += $(FUZZER_OPTIMIZE_FLAGS) -D OLM_FUZZING=1
+$(FUZZER_DEBUG_OBJECTS): CFLAGS += $(DEBUG_OPTIMIZE_FLAGS) $(CFLAGS_NATIVE) -D OLM_FUZZING=1
+$(FUZZER_DEBUG_OBJECTS): CXXFLAGS += $(DEBUG_OPTIMIZE_FLAGS) $(CXXFLAGS_NATIVE) -D OLM_FUZZING=1
+$(FUZZER_ASAN_OBJECTS): CFLAGS += $(FUZZER_OPTIMIZE_FLAGS) -D OLM_FUZZING=1
+$(FUZZER_ASAN_OBJECTS): CXXFLAGS += $(FUZZER_OPTIMIZE_FLAGS) -D OLM_FUZZING=1
+$(FUZZER_MSAN_OBJECTS): CFLAGS += $(FUZZER_OPTIMIZE_FLAGS) -D OLM_FUZZING=1
+$(FUZZER_MSAN_OBJECTS): CXXFLAGS += $(FUZZER_OPTIMIZE_FLAGS) -D OLM_FUZZING=1
+
+$(FUZZER_BINARIES): CPPFLAGS += -Ifuzzing/fuzzers/include
+$(FUZZER_BINARIES): LDFLAGS += $(FUZZER_OPTIMIZE_FLAGS) -L$(BUILD_DIR) -lstdc++
+$(FUZZER_ASAN_BINARIES): CPPFLAGS += -Ifuzzing/fuzzers/include
+$(FUZZER_ASAN_BINARIES): LDFLAGS += $(FUZZER_OPTIMIZE_FLAGS) -L$(BUILD_DIR) -lstdc++
+$(FUZZER_MSAN_BINARIES): CPPFLAGS += -Ifuzzing/fuzzers/include
+$(FUZZER_MSAN_BINARIES): LDFLAGS += $(FUZZER_OPTIMIZE_FLAGS) -L$(BUILD_DIR) -lstdc++
+$(FUZZER_DEBUG_BINARIES): CPPFLAGS += -Ifuzzing/fuzzers/include
+$(FUZZER_DEBUG_BINARIES): LDFLAGS += $(DEBUG_OPTIMIZE_FLAGS) -lstdc++
 
 $(JS_OBJECTS): CFLAGS += $(JS_OPTIMIZE_FLAGS)
 $(JS_OBJECTS): CXXFLAGS += $(JS_OPTIMIZE_FLAGS)
@@ -158,6 +186,12 @@ lib: $(RELEASE_TARGET)
 .PHONY: lib
 
 $(RELEASE_TARGET): $(RELEASE_OBJECTS)
+	@echo
+	@echo '****************************************************************************'
+	@echo '* WARNING: Building olm with make is deprecated. Please use cmake instead. *'
+	@echo '****************************************************************************'
+	@echo
+
 	$(CXX) $(LDFLAGS) --shared -fPIC \
             $(OLM_LDFLAGS) \
             $(OUTPUT_OPTION) $(RELEASE_OBJECTS)
@@ -182,32 +216,39 @@ $(STATIC_RELEASE_TARGET): $(RELEASE_OBJECTS)
 js: $(JS_WASM_TARGET) $(JS_ASMJS_TARGET)
 .PHONY: js
 
+wasm: $(WASM_TARGET)
+.PHONY: wasm
+
+$(WASM_TARGET): $(WASM_OBJECTS)
+	$(EMAR) rcs $@ $^
+
+javascript/olm_prefix.js: javascript/olm_prefix.js.in Makefile common.mk
+	sed s/@VERSION@/$(VERSION)/ javascript/olm_prefix.js.in > $@
+
 # Note that the output file we give to emcc determines the name of the
 # wasm file baked into the js, hence messing around outputting to olm.js
 # and then renaming it.
 $(JS_WASM_TARGET): $(JS_OBJECTS) $(JS_PRE) $(JS_POST) $(JS_EXPORTED_FUNCTIONS) $(JS_PREFIX) $(JS_SUFFIX)
-	EMCC_CLOSURE_ARGS="--externs $(JS_EXTERNS)" $(EMCC_LINK) \
+	EMCC_CLOSURE_ARGS="--externs $(CURDIR)/$(JS_EXTERNS)" $(EMCC_LINK) \
 	       $(EMCCFLAGS_WASM) \
                $(foreach f,$(JS_PRE),--pre-js $(f)) \
                $(foreach f,$(JS_POST),--post-js $(f)) \
+               $(foreach f,$(JS_PREFIX),--extern-pre-js $(f)) \
+               $(foreach f,$(JS_SUFFIX),--extern-post-js $(f)) \
                -s "EXPORTED_FUNCTIONS=@$(JS_EXPORTED_FUNCTIONS)" \
-               -s "EXTRA_EXPORTED_RUNTIME_METHODS=$(JS_EXTRA_EXPORTED_RUNTIME_METHODS)" \
-               $(JS_OBJECTS) -o $@
-	       mv $@ javascript/olmtmp.js
-	       cat $(JS_PREFIX) javascript/olmtmp.js $(JS_SUFFIX) > $@
-	       rm javascript/olmtmp.js
+               -s "EXPORTED_RUNTIME_METHODS=$(JS_EXPORTED_RUNTIME_METHODS)" \
+               -o $@ $(JS_OBJECTS)
 
 $(JS_ASMJS_TARGET): $(JS_OBJECTS) $(JS_PRE) $(JS_POST) $(JS_EXPORTED_FUNCTIONS) $(JS_PREFIX) $(JS_SUFFIX)
-	EMCC_CLOSURE_ARGS="--externs $(JS_EXTERNS)" $(EMCC_LINK) \
+	EMCC_CLOSURE_ARGS="--externs $(CURDIR)/$(JS_EXTERNS)" $(EMCC_LINK) \
 	       $(EMCCFLAGS_ASMJS) \
                $(foreach f,$(JS_PRE),--pre-js $(f)) \
                $(foreach f,$(JS_POST),--post-js $(f)) \
+               $(foreach f,$(JS_PREFIX),--extern-pre-js $(f)) \
+               $(foreach f,$(JS_SUFFIX),--extern-post-js $(f)) \
                -s "EXPORTED_FUNCTIONS=@$(JS_EXPORTED_FUNCTIONS)" \
-               -s "EXTRA_EXPORTED_RUNTIME_METHODS=$(JS_EXTRA_EXPORTED_RUNTIME_METHODS)" \
-               $(JS_OBJECTS) -o $@
-	       mv $@ javascript/olmtmp.js
-	       cat $(JS_PREFIX) javascript/olmtmp.js $(JS_SUFFIX) > $@
-	       rm javascript/olmtmp.js
+               -s "EXPORTED_RUNTIME_METHODS=$(JS_EXPORTED_RUNTIME_METHODS)" \
+               -o $@ $(JS_OBJECTS)
 
 build_tests: $(TEST_BINARIES)
 
@@ -217,7 +258,13 @@ test: build_tests
 	    $$i || exit $$?; \
 	done
 
-fuzzers: $(FUZZER_BINARIES) $(FUZZER_DEBUG_BINARIES)
+test_mem: build_tests
+	for i in $(TEST_BINARIES); do \
+	    echo $$i; \
+	    valgrind -q --leak-check=yes --exit-on-first-error=yes --error-exitcode=1 $$i || exit $$?; \
+	done
+
+fuzzers: $(FUZZER_BINARIES) $(FUZZER_ASAN_BINARIES) $(FUZZER_MSAN_BINARIES) $(FUZZER_DEBUG_BINARIES)
 .PHONY: fuzzers
 
 $(JS_EXPORTED_FUNCTIONS): $(PUBLIC_HEADERS)
@@ -278,13 +325,21 @@ $(BUILD_DIR)/javascript/%.o: %.cpp
 	$(call mkdir,$(dir $@))
 	$(EMCC.cc) $(OUTPUT_OPTION) $<
 
+$(BUILD_DIR)/wasm/%.o: %.c
+	$(call mkdir,$(dir $@))
+	$(EMCC.c) $(OUTPUT_OPTION) $<
+
+$(BUILD_DIR)/wasm/%.o: %.cpp
+	$(call mkdir,$(dir $@))
+	$(EMCC.cc) $(OUTPUT_OPTION) $<
+
 $(BUILD_DIR)/tests/%: tests/%.c $(DEBUG_OBJECTS)
 	$(call mkdir,$(dir $@))
-	$(LINK.c) $< $(DEBUG_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $@
+	$(LINK.c) -o $@ $< $(DEBUG_OBJECTS) $(LOADLIBES) $(LDLIBS)
 
 $(BUILD_DIR)/tests/%: tests/%.cpp $(DEBUG_OBJECTS)
 	$(call mkdir,$(dir $@))
-	$(LINK.cc) $< $(DEBUG_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $@
+	$(LINK.cc) -o $@ $< $(DEBUG_OBJECTS) $(LOADLIBES) $(LDLIBS)
 
 $(BUILD_DIR)/fuzzers/objects/%.o: %.c
 	$(call mkdir,$(dir $@))
@@ -294,20 +349,60 @@ $(BUILD_DIR)/fuzzers/objects/%.o: %.cpp
 	$(call mkdir,$(dir $@))
 	$(AFL.cc) $(OUTPUT_OPTION) $<
 
-$(BUILD_DIR)/fuzzers/fuzz_%: fuzzers/fuzz_%.c $(FUZZER_OBJECTS)
-	$(AFL_LINK.c) $< $(FUZZER_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $@
+$(BUILD_DIR)/fuzzers/objects/asan_%.o: %.c
+	$(call mkdir,$(dir $@))
+	$(AFL_ASAN.c) $(OUTPUT_OPTION) $<
 
-$(BUILD_DIR)/fuzzers/fuzz_%: fuzzers/fuzz_%.cpp $(FUZZER_OBJECTS)
-	$(AFL_LINK.cc) $< $(FUZZER_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $@
+$(BUILD_DIR)/fuzzers/objects/asan_%.o: %.cpp
+	$(call mkdir,$(dir $@))
+	$(AFL_ASAN.cc) $(OUTPUT_OPTION) $<
 
-$(BUILD_DIR)/fuzzers/debug_%: fuzzers/fuzz_%.c $(DEBUG_OBJECTS)
-	$(LINK.c) $< $(DEBUG_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $@
+$(BUILD_DIR)/fuzzers/objects/msan_%.o: %.c
+	$(call mkdir,$(dir $@))
+	$(AFL_MSAN.c) $(OUTPUT_OPTION) $<
 
-$(BUILD_DIR)/fuzzers/debug_%: fuzzers/fuzz_%.cpp $(DEBUG_OBJECTS)
-	$(LINK.cc) $< $(DEBUG_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $@
+$(BUILD_DIR)/fuzzers/objects/msan_%.o: %.cpp
+	$(call mkdir,$(dir $@))
+	$(AFL_MSAN.cc) $(OUTPUT_OPTION) $<
+
+$(BUILD_DIR)/fuzzers/objects/debug_%.o: %.c
+	$(call mkdir,$(dir $@))
+	$(COMPILE.c) $(OUTPUT_OPTION) $<
+
+$(BUILD_DIR)/fuzzers/objects/debug_%.o: %.cpp
+	$(call mkdir,$(dir $@))
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+
+
+$(BUILD_DIR)/fuzzers/fuzz_%: fuzzing/fuzzers/fuzz_%.c $(FUZZER_OBJECTS)
+	$(AFL_LINK.c) -o $@ $< $(FUZZER_OBJECTS) $(LOADLIBES) $(LDLIBS)
+
+$(BUILD_DIR)/fuzzers/fuzz_%: fuzzing/fuzzers/fuzz_%.cpp $(FUZZER_OBJECTS)
+	$(AFL_LINK.cc) -o $@ $< $(FUZZER_OBJECTS) $(LOADLIBES) $(LDLIBS)
+
+$(BUILD_DIR)/fuzzers/debug_%: fuzzing/fuzzers/fuzz_%.c $(FUZZER_DEBUG_OBJECTS)
+	$(LINK.c) -o $@ $< $(FUZZER_DEBUG_OBJECTS) $(LOADLIBES) $(LDLIBS)
+
+$(BUILD_DIR)/fuzzers/debug_%: fuzzing/fuzzers/fuzz_%.cpp $(FUZZER_DEBUG_OBJECTS)
+	$(LINK.cc) -o $@ $< $(FUZZER_DEBUG_OBJECTS) $(LOADLIBES) $(LDLIBS)
+
+$(BUILD_DIR)/fuzzers/fuzz_%_asan: fuzzing/fuzzers/fuzz_%.c $(FUZZER_ASAN_OBJECTS)
+	$(AFL_LINK_ASAN.c) -o $@ $< $(FUZZER_ASAN_OBJECTS) $(LOADLIBES) $(LDLIBS)
+
+$(BUILD_DIR)/fuzzers/fuzz_%_asan: fuzzing/fuzzers/fuzz_%.cpp $(FUZZER_ASAN_OBJECTS)
+	$(AFL_LINK_ASAN.cc) -o $@ $< $(FUZZER_ASAN_OBJECTS) $(LOADLIBES) $(LDLIBS)
+
+$(BUILD_DIR)/fuzzers/fuzz_%_msan: fuzzing/fuzzers/fuzz_%.c $(FUZZER_MSAN_OBJECTS)
+	$(AFL_LINK_MSAN.c) -o $@ $< $(FUZZER_MSAN_OBJECTS) $(LOADLIBES) $(LDLIBS)
+
+$(BUILD_DIR)/fuzzers/fuzz_%_msan: fuzzing/fuzzers/fuzz_%.cpp $(FUZZER_MSAN_OBJECTS)
+	$(AFL_LINK_MSAN.cc) -o $@ $< $(FUZZER_MSAN_OBJECTS) $(LOADLIBES) $(LDLIBS)
 
 %.html: %.rst
 	rst2html $< $@
+
+%.html: %.md
+	pandoc --from markdown --to html5 --standalone --lua-filter gitlab-math.lua --katex -o $@ $<
 
 ### dependencies
 
@@ -316,5 +411,10 @@ $(BUILD_DIR)/fuzzers/debug_%: fuzzers/fuzz_%.cpp $(DEBUG_OBJECTS)
 -include $(JS_OBJECTS:.o=.d)
 -include $(TEST_BINARIES:=.d)
 -include $(FUZZER_OBJECTS:.o=.d)
+-include $(FUZZER_DEBUG_OBJECTS:.o=.d)
+-include $(FUZZER_ASAN_OBJECTS:.o=.d)
+-include $(FUZZER_MSAN_OBJECTS:.o=.d)
 -include $(FUZZER_BINARIES:=.d)
+-include $(FUZZER_ASAN_BINARIES:=.d)
+-include $(FUZZER_MSAN_BINARIES:=.d)
 -include $(FUZZER_DEBUG_BINARIES:=.d)

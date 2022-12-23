@@ -33,6 +33,13 @@ link_args = ["-L../build"]
 if DEVELOP and DEVELOP.lower() in ["yes", "true", "1"]:
     link_args.append('-Wl,-rpath=../build')
 
+# If libolm is compiled statically, we may need to link to the C++ standard
+# library dynamically.  This flag allows passing the required linker flag to do
+# so.
+CXX_LIB = os.environ.get("CXX_LIB")
+if CXX_LIB:
+    link_args.extend(CXX_LIB.split())
+
 headers_build = subprocess.Popen("make headers", shell=True)
 headers_build.wait()
 
@@ -48,6 +55,9 @@ ffibuilder.set_source(
     libraries=["olm"],
     extra_compile_args=compile_args,
     extra_link_args=link_args)
+
+with open(os.path.join(PATH, "include/olm/error.h")) as f:
+    ffibuilder.cdef(f.read(), override=True)
 
 with open(os.path.join(PATH, "include/olm/olm.h")) as f:
     ffibuilder.cdef(f.read(), override=True)

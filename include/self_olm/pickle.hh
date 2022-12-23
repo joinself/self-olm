@@ -21,6 +21,12 @@
 #include <cstring>
 #include <cstdint>
 
+/* Convenience macro for checking the return value of internal unpickling
+ * functions and returning early on failure. */
+#ifndef UNPICKLE_OK
+#define UNPICKLE_OK(x) do { if (!(x)) return nullptr; } while(0)
+#endif
+
 namespace olm {
 
 inline std::size_t pickle_length(
@@ -37,6 +43,23 @@ std::uint8_t * pickle(
 std::uint8_t const * unpickle(
     std::uint8_t const * pos, std::uint8_t const * end,
     std::uint32_t & value
+);
+
+
+inline std::size_t pickle_length(
+    const std::uint8_t & value
+) {
+    return 1;
+}
+
+std::uint8_t * pickle(
+    std::uint8_t * pos,
+    std::uint8_t value
+);
+
+std::uint8_t const * unpickle(
+    std::uint8_t const * pos, std::uint8_t const * end,
+    std::uint8_t & value
 );
 
 
@@ -88,11 +111,21 @@ std::uint8_t const * unpickle(
     olm::List<T, max_size> & list
 ) {
     std::uint32_t size;
+
     pos = unpickle(pos, end, size);
+    if (!pos) {
+        return nullptr;
+    }
+
     while (size-- && pos != end) {
         T * value = list.insert(list.end());
         pos = unpickle(pos, end, *value);
+
+        if (!pos) {
+            return nullptr;
+        }
     }
+
     return pos;
 }
 

@@ -42,12 +42,24 @@ static olm::Account * from_c(OlmAccount * account) {
     return reinterpret_cast<olm::Account *>(account);
 }
 
+static const olm::Account * from_c(OlmAccount const * account) {
+    return reinterpret_cast<olm::Account const *>(account);
+}
+
 static olm::Session * from_c(OlmSession * session) {
     return reinterpret_cast<olm::Session *>(session);
 }
 
+static const olm::Session * from_c(OlmSession const * session) {
+    return reinterpret_cast<const olm::Session *>(session);
+}
+
 static olm::Utility * from_c(OlmUtility * utility) {
     return reinterpret_cast<olm::Utility *>(utility);
+}
+
+static const olm::Utility * from_c(OlmUtility const * utility) {
+    return reinterpret_cast<const olm::Utility *>(utility);
 }
 
 static std::uint8_t * from_c(void * bytes) {
@@ -110,25 +122,42 @@ size_t olm_error(void) {
 
 
 const char * olm_account_last_error(
-    OlmAccount * account
+    const OlmAccount * account
 ) {
     auto error = from_c(account)->last_error;
     return _olm_error_to_string(error);
 }
 
+enum OlmErrorCode olm_account_last_error_code(
+    const OlmAccount * account
+) {
+    return from_c(account)->last_error;
+}
 
 const char * olm_session_last_error(
-    OlmSession * session
+    const OlmSession * session
 ) {
     auto error = from_c(session)->last_error;
     return _olm_error_to_string(error);
 }
 
+enum OlmErrorCode olm_session_last_error_code(
+    OlmSession const * session
+) {
+    return from_c(session)->last_error;
+}
+
 const char * olm_utility_last_error(
-    OlmUtility * utility
+    OlmUtility const * utility
 ) {
     auto error = from_c(utility)->last_error;
     return _olm_error_to_string(error);
+}
+
+enum OlmErrorCode olm_utility_last_error_code(
+    OlmUtility const * utility
+) {
+    return from_c(utility)->last_error;
 }
 
 size_t olm_account_size(void) {
@@ -202,14 +231,14 @@ size_t olm_clear_utility(
 
 
 size_t olm_pickle_account_length(
-    OlmAccount * account
+    OlmAccount const * account
 ) {
     return _olm_enc_output_length(pickle_length(*from_c(account)));
 }
 
 
 size_t olm_pickle_session_length(
-    OlmSession * session
+    OlmSession const * session
 ) {
     return _olm_enc_output_length(pickle_length(*from_c(session)));
 }
@@ -253,24 +282,31 @@ size_t olm_unpickle_account(
     void * pickled, size_t pickled_length
 ) {
     olm::Account & object = *from_c(account);
-    std::uint8_t * const pos = from_c(pickled);
+    std::uint8_t * input = from_c(pickled);
     std::size_t raw_length = _olm_enc_input(
-        from_c(key), key_length, pos, pickled_length, &object.last_error
+        from_c(key), key_length, input, pickled_length, &object.last_error
     );
     if (raw_length == std::size_t(-1)) {
         return std::size_t(-1);
     }
-    std::uint8_t * const end = pos + raw_length;
-    /* On success unpickle will return (pos + raw_length). If unpickling
-     * terminates too soon then it will return a pointer before
-     * (pos + raw_length). On error unpickle will return (pos + raw_length + 1).
-     */
-    if (end != unpickle(pos, end + 1, object)) {
+
+    std::uint8_t const * pos = input;
+    std::uint8_t const * end = pos + raw_length;
+
+    pos = unpickle(pos, end, object);
+
+    if (!pos) {
+        /* Input was corrupted. */
         if (object.last_error == OlmErrorCode::OLM_SUCCESS) {
             object.last_error = OlmErrorCode::OLM_CORRUPTED_PICKLE;
         }
         return std::size_t(-1);
+    } else if (pos != end) {
+        /* Input was longer than expected. */
+        object.last_error = OlmErrorCode::OLM_PICKLE_EXTRA_DATA;
+        return std::size_t(-1);
     }
+
     return pickled_length;
 }
 
@@ -281,31 +317,37 @@ size_t olm_unpickle_session(
     void * pickled, size_t pickled_length
 ) {
     olm::Session & object = *from_c(session);
-    std::uint8_t * const pos = from_c(pickled);
+    std::uint8_t * input = from_c(pickled);
     std::size_t raw_length = _olm_enc_input(
-        from_c(key), key_length, pos, pickled_length, &object.last_error
+        from_c(key), key_length, input, pickled_length, &object.last_error
     );
     if (raw_length == std::size_t(-1)) {
         return std::size_t(-1);
     }
 
-    std::uint8_t * const end = pos + raw_length;
-    /* On success unpickle will return (pos + raw_length). If unpickling
-     * terminates too soon then it will return a pointer before
-     * (pos + raw_length). On error unpickle will return (pos + raw_length + 1).
-     */
-    if (end != unpickle(pos, end + 1, object)) {
+    std::uint8_t const * pos = input;
+    std::uint8_t const * end = pos + raw_length;
+
+    pos = unpickle(pos, end, object);
+
+    if (!pos) {
+        /* Input was corrupted. */
         if (object.last_error == OlmErrorCode::OLM_SUCCESS) {
             object.last_error = OlmErrorCode::OLM_CORRUPTED_PICKLE;
         }
         return std::size_t(-1);
+    } else if (pos != end) {
+        /* Input was longer than expected. */
+        object.last_error = OlmErrorCode::OLM_PICKLE_EXTRA_DATA;
+        return std::size_t(-1);
     }
+
     return pickled_length;
 }
 
 
 size_t olm_create_account_random_length(
-    OlmAccount * account
+    OlmAccount const * account
 ) {
     return from_c(account)->new_account_random_length();
 }
@@ -332,7 +374,7 @@ size_t olm_create_account_derrived_keys(
 
 
 size_t olm_account_identity_keys_length(
-    OlmAccount * account
+    OlmAccount const * account
 ) {
     return from_c(account)->get_identity_json_length();
 }
@@ -349,7 +391,7 @@ size_t olm_account_identity_keys(
 
 
 size_t olm_account_signature_length(
-    OlmAccount * account
+    OlmAccount const * account
 ) {
     return b64_output_length(from_c(account)->signature_length());
 }
@@ -375,7 +417,7 @@ size_t olm_account_sign(
 
 
 size_t olm_account_one_time_keys_length(
-    OlmAccount * account
+    OlmAccount const * account
 ) {
     return from_c(account)->get_one_time_keys_json_length();
 }
@@ -399,14 +441,14 @@ size_t olm_account_mark_keys_as_published(
 
 
 size_t olm_account_max_number_of_one_time_keys(
-    OlmAccount * account
+    OlmAccount const * account
 ) {
     return from_c(account)->max_number_of_one_time_keys();
 }
 
 
 size_t olm_account_generate_one_time_keys_random_length(
-    OlmAccount * account,
+    OlmAccount const * account,
     size_t number_of_keys
 ) {
     return from_c(account)->generate_one_time_keys_random_length(number_of_keys);
@@ -427,8 +469,68 @@ size_t olm_account_generate_one_time_keys(
 }
 
 
+size_t olm_account_generate_fallback_key_random_length(
+    OlmAccount const * account
+) {
+    return from_c(account)->generate_fallback_key_random_length();
+}
+
+
+size_t olm_account_generate_fallback_key(
+    OlmAccount * account,
+    void * random, size_t random_length
+) {
+    size_t result = from_c(account)->generate_fallback_key(
+        from_c(random), random_length
+    );
+    olm::unset(random, random_length);
+    return result;
+}
+
+
+size_t olm_account_fallback_key_length(
+    OlmAccount const * account
+) {
+    return from_c(account)->get_fallback_key_json_length();
+}
+
+
+size_t olm_account_fallback_key(
+    OlmAccount * account,
+    void * fallback_key_json, size_t fallback_key_json_length
+) {
+    return from_c(account)->get_fallback_key_json(
+        from_c(fallback_key_json), fallback_key_json_length
+    );
+}
+
+
+size_t olm_account_unpublished_fallback_key_length(
+    OlmAccount const * account
+) {
+    return from_c(account)->get_unpublished_fallback_key_json_length();
+}
+
+
+size_t olm_account_unpublished_fallback_key(
+    OlmAccount * account,
+    void * fallback_key_json, size_t fallback_key_json_length
+) {
+    return from_c(account)->get_unpublished_fallback_key_json(
+        from_c(fallback_key_json), fallback_key_json_length
+    );
+}
+
+
+void olm_account_forget_old_fallback_key(
+    OlmAccount * account
+) {
+    return from_c(account)->forget_old_fallback_key();
+}
+
+
 size_t olm_create_outbound_session_random_length(
-    OlmSession * session
+    OlmSession const * session
 ) {
     return from_c(session)->new_outbound_session_random_length();
 }
@@ -436,7 +538,7 @@ size_t olm_create_outbound_session_random_length(
 
 size_t olm_create_outbound_session(
     OlmSession * session,
-    OlmAccount * account,
+    OlmAccount const * account,
     void const * their_identity_key, size_t their_identity_key_length,
     void const * their_one_time_key, size_t their_one_time_key_length,
     void * random, size_t random_length
@@ -514,7 +616,7 @@ size_t olm_create_inbound_session_from(
 
 
 size_t olm_session_id_length(
-    OlmSession * session
+    OlmSession const * session
 ) {
     return b64_output_length(from_c(session)->session_id_length());
 }
@@ -540,7 +642,7 @@ size_t olm_session_id(
 
 
 int olm_session_has_received_message(
-    OlmSession * session
+    OlmSession const * session
 ) {
     return from_c(session)->received_message;
 }
@@ -611,21 +713,21 @@ size_t olm_remove_one_time_keys(
 
 
 size_t olm_encrypt_message_type(
-    OlmSession * session
+    OlmSession const * session
 ) {
     return size_t(from_c(session)->encrypt_message_type());
 }
 
 
 size_t olm_encrypt_random_length(
-    OlmSession * session
+    OlmSession const * session
 ) {
     return from_c(session)->encrypt_random_length();
 }
 
 
 size_t olm_encrypt_message_length(
-    OlmSession * session,
+    OlmSession const * session,
     size_t plaintext_length
 ) {
     return b64_output_length(
@@ -698,7 +800,7 @@ size_t olm_decrypt(
 
 
 size_t olm_sha256_length(
-   OlmUtility * utility
+   OlmUtility const * utility
 ) {
     return b64_output_length(from_c(utility)->sha256_length());
 }

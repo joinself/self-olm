@@ -19,6 +19,10 @@
 #include "self_olm/list.hh"
 #include "self_olm/error.h"
 
+// Note: exports in this file are only for unit tests.  Nobody else should be
+// using this externally
+#include "olm/olm_export.h"
+
 struct _olm_cipher;
 
 namespace olm {
@@ -72,7 +76,7 @@ struct KdfInfo {
 };
 
 
-struct Ratchet {
+struct OLM_EXPORT Ratchet {
 
     Ratchet(
         KdfInfo const & kdf_info,
@@ -94,7 +98,7 @@ struct Ratchet {
 
     /** The sender chain is used to send messages. Each time a new ephemeral
      * key is received from the remote server we generate a new sender chain
-     * with a new empheral key when we next send a message. */
+     * with a new ephemeral key when we next send a message. */
     List<SenderChain, 1> sender_chain;
 
     /** The receiver chain is used to decrypt received messages. We store the
@@ -124,12 +128,12 @@ struct Ratchet {
      * a given message length. */
     std::size_t encrypt_output_length(
         std::size_t plaintext_length
-    );
+    ) const;
 
     /** The number of bytes of random data the encrypt method will need to
      * encrypt a message. This will be 32 bytes if the session needs to
      * generate a new ephemeral key, or will be 0 bytes otherwise.*/
-    std::size_t encrypt_random_length();
+    std::size_t encrypt_random_length() const;
 
     /** Encrypt some plain-text. Returns the length of the encrypted message
      * or std::size_t(-1) on failure. On failure last_error will be set with

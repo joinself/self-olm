@@ -40,30 +40,30 @@ advanced as follows:
 ```math
 \begin{aligned}
 R_{i,0} &=
-    \begin{cases}
-    H_0\left(R_{2^24(n-1),0}\right) &\text{if }\exists n | i = 2^24n\\
-    R_{i-1,0} &\text{otherwise}
-    \end{cases}\\
+  \begin{cases}
+  H_0\left(R_{2^{24}(n-1),0}\right) &\text{if }\exists n | i = 2^{24}n\\
+  R_{i-1,0} &\text{otherwise}
+  \end{cases}\\
 R_{i,1} &=
-    \begin{cases}
-    H_1\left(R_{2^24(n-1),0}\right) &\text{if }\exists n | i = 2^24n\\
-    H_1\left(R_{2^16(m-1),1}\right) &\text{if }\exists m | i = 2^16m\\
-    R_{i-1,1} &\text{otherwise}
-    \end{cases}\\
+  \begin{cases}
+  H_1\left(R_{2^{24}(n-1),0}\right) &\text{if }\exists n | i = 2^{24}n\\
+  H_1\left(R_{2^{16}(m-1),1}\right) &\text{if }\exists m | i = 2^{16}m\\
+  R_{i-1,1} &\text{otherwise}
+  \end{cases}\\
 R_{i,2} &=
-    \begin{cases}
-    H_2\left(R_{2^24(n-1),0}\right) &\text{if }\exists n | i = 2^24n\\
-    H_2\left(R_{2^16(m-1),1}\right) &\text{if }\exists m | i = 2^16m\\
-    H_2\left(R_{2^8(p-1),2}\right) &\text{if }\exists p | i = 2^8p\\
-    R_{i-1,2} &\text{otherwise}
-    \end{cases}\\
+  \begin{cases}
+  H_2\left(R_{2^{24}(n-1),0}\right) &\text{if }\exists n | i = 2^{24}n\\
+  H_2\left(R_{2^{16}(m-1),1}\right) &\text{if }\exists m | i = 2^{16}m\\
+  H_2\left(R_{2^8(p-1),2}\right) &\text{if }\exists p | i = 2^8p\\
+  R_{i-1,2} &\text{otherwise}
+  \end{cases}\\
 R_{i,3} &=
-    \begin{cases}
-    H_3\left(R_{2^24(n-1),0}\right) &\text{if }\exists n | i = 2^24n\\
-    H_3\left(R_{2^16(m-1),1}\right) &\text{if }\exists m | i = 2^16m\\
-    H_3\left(R_{2^8(p-1),2}\right) &\text{if }\exists p | i = 2^8p\\
-    H_3\left(R_{i-1,3}\right) &\text{otherwise}
-    \end{cases}
+  \begin{cases}
+  H_3\left(R_{2^{24}(n-1),0}\right) &\text{if }\exists n | i = 2^{24}n\\
+  H_3\left(R_{2^{16}(m-1),1}\right) &\text{if }\exists m | i = 2^{16}m\\
+  H_3\left(R_{2^8(p-1),2}\right) &\text{if }\exists p | i = 2^8p\\
+  H_3\left(R_{i-1,3}\right) &\text{otherwise}
+  \end{cases}
 \end{aligned}
 ```
 
@@ -109,7 +109,7 @@ discriminate between sessions.
 ### Sharing session data
 
 To allow other participants in the conversation to decrypt messages, the
-session data is formatted as described in [Session-sharing format](#Session-sharing-format). It is then
+session data is formatted as described in [Session-sharing format](#session-sharing-format). It is then
 shared with other participants in the conversation via a secure peer-to-peer
 channel (such as that provided by [Olm][]).
 
@@ -182,9 +182,13 @@ but the decision of which ratchet states to cache is left to the application.
 
 ## Data exchange formats
 
-### Session-sharing format
+### Session sharing format
 
-The Megolm key-sharing format is as follows:
+This format is used for the initial sharing of a Megolm session with other
+group participants who need to be able to read messages encrypted by this
+session.
+
+The session sharing format is as follows:
 
 ```
 +---+----+--------+--------+--------+--------+------+-----------+
@@ -201,6 +205,33 @@ part of the Ed25519 keypair $`K`$.
 
 The data is then signed using the Ed25519 keypair, and the 64-byte signature is
 appended.
+
+### Session export format
+
+Once the session is initially shared with the group participants, each
+participant needs to retain a copy of the session if they want to maintain
+their ability to decrypt messages encrypted with that session.
+
+For forward-secrecy purposes, a participant may choose to store a ratcheted
+version of the session. But since the ratchet index is covered by the
+signature, this would invalidate the signature. So we define a similar format,
+called the *session export format*, which is identical to the [session sharing
+format](#session-sharing-format) except for dropping the signature.
+
+The Megolm session export format is thus as follows:
+
+```
++---+----+--------+--------+--------+--------+------+
+| V | i  | R(i,0) | R(i,1) | R(i,2) | R(i,3) | Kpub |
++---+----+--------+--------+--------+--------+------+
+0   1    5        37       69      101      133    165   bytes
+```
+
+The version byte, ``V``, is ``"\x01"``.
+
+This is followed by the ratchet index, $`i`$, which is encoded as a
+big-endian 32-bit integer; the ratchet values $`R_{i,j}`$; and the public
+part of the Ed25519 keypair $`K`$.
 
 ### Message format
 
